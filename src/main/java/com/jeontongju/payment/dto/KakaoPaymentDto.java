@@ -5,7 +5,9 @@ import lombok.Getter;
 
 import java.util.UUID;
 
-
+/**
+ * 카카오 페이 호출시 사용되는 DTO
+ */
 @Getter
 @Builder
 public class KakaoPaymentDto {
@@ -16,7 +18,7 @@ public class KakaoPaymentDto {
     private Long totalAmount;
     private Long taxFreeAmount;
 
-    public static KakaoPaymentDto convertOrderDtoToPaymentDto(String userId, String titleName, Long totalAmount){
+    public static KakaoPaymentDto convertPaymentDto(String userId, String titleName, Long totalAmount){
         return KakaoPaymentDto.builder()
                 .partnerUserId(userId)
                 .partnerOrderId(UUID.randomUUID().toString())

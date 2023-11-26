@@ -1,4 +1,4 @@
-package com.jeontongju.payment.enums;
+package com.jeontongju.payment.enums.temp;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

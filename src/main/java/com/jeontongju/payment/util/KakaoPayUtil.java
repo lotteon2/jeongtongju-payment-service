@@ -1,10 +1,16 @@
 package com.jeontongju.payment.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jeontongju.payment.dto.KakaoPaymentDto;
+import com.jeontongju.payment.dto.PaymentDto;
+import com.jeontongju.payment.dto.controller.MemberCreditChargeDto;
+import com.jeontongju.payment.dto.temp.KakaoPayApproveDto;
+import com.jeontongju.payment.dto.temp.KakaoPayCancelDto;
 import com.jeontongju.payment.dto.temp.OrderCreationDto;
 import com.jeontongju.payment.dto.temp.PaymentCreationDto;
+import com.jeontongju.payment.enums.temp.PaymentMethodEnum;
 import com.jeontongju.payment.exception.RedisConnectionException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,14 +35,23 @@ public class KakaoPayUtil {
     @Value("${cid}")
     private String cid;
 
-    @Value("${approvalUrl}")
-    private String approvalUrl;
+    @Value("${orderApprovalUrl}")
+    private String orderApprovalUrl;
 
-    @Value("${cancelUrl}")
-    private String cancelUrl;
+    @Value("${orderCancelUrl}")
+    private String orderCancelUrl;
 
-    @Value("${failUrl}")
-    private String failUrl;
+    @Value("${orderFailUrl}")
+    private String orderFailUrl;
+
+    @Value("${creditApprovalUrl}")
+    private String creditApprovalUrl;
+
+    @Value("${creditCancelUrl}")
+    private String creditCancelUrl;
+
+    @Value("${creditFailUrl}")
+    private String creditFailUrl;
 
     @Value("${kakaoPayKey}")
     private String kakaoPayKey;
@@ -53,28 +68,33 @@ public class KakaoPayUtil {
     private final RedisTemplate<String, String> redisTemplate;
     private final ObjectMapper objectMapper;
 
-    public ResponseEntity<String> callKakaoReadyApi(PaymentCreationDto paymentCreationDto, KakaoPaymentDto kakaoPaymentDto) {
-        ResponseEntity<String> exchange = callKakaoApi(KAKAO_READY_URL, getKakaoPayReadyPayloadData(kakaoPaymentDto));
-        savePaymentInfoToRedis(exchange, paymentCreationDto, kakaoPaymentDto);
+    public ResponseEntity<String> createOrderInfoWithKakao(PaymentCreationDto paymentCreationDto, KakaoPaymentDto kakaoPaymentDto) {
+        ResponseEntity<String> exchange = callKakaoApi(KAKAO_READY_URL, getKakaoPayReadyPayloadData(kakaoPaymentDto,orderApprovalUrl, orderCancelUrl, orderFailUrl));
+        saveRedis(kakaoPaymentDto.getPartnerOrderId(), OrderCreationDto.builder().tid(getTid(exchange)).paymentCreationDto(paymentCreationDto).consumerId(kakaoPaymentDto.getPartnerUserId()).build());
         return exchange;
     }
 
-    /*public int callKakaoApproveApi(KakaoPayDto kakaoPayDto) {
-        try{
-            return callKakaoApi(kakaoApproveUrl, getKakaoPayApprovePayLoadData(kakaoPayDto)).getStatusCode().value();
-        }catch(KakaoPayFailException e){
-            throw new KakaoPayFailException("카카오 페이 결제 실패");
-        }
+    public ResponseEntity<String> createCreditInfoWithKakao(MemberCreditChargeDto memberCreditChargeDto, KakaoPaymentDto kakaoPaymentDto) {
+        ResponseEntity<String> exchange = callKakaoApi(KAKAO_READY_URL, getKakaoPayReadyPayloadData(kakaoPaymentDto, creditApprovalUrl, creditCancelUrl, creditFailUrl));
+        saveRedis(kakaoPaymentDto.getPartnerOrderId(), PaymentDto.builder()
+                .consumerId(Long.valueOf(kakaoPaymentDto.getPartnerUserId()))
+                .chargeCredit(memberCreditChargeDto.getChargeCredit())
+                .paymentType(memberCreditChargeDto.getPaymentType())
+                .paymentMethod(PaymentMethodEnum.KAKAO)
+                .paymentAmount(kakaoPaymentDto.getTotalAmount())
+                .paymentTaxFreeAmount(kakaoPaymentDto.getTaxFreeAmount())
+                .tid(getTid(exchange))
+                .build());
+        return exchange;
+    }
+
+    public int callKakaoApproveApi(KakaoPayApproveDto kakaoPayApproveDto) {
+        return callKakaoApi(KAKAO_APPROVE_URL, getKakaoPayApprovePayLoadData(kakaoPayApproveDto)).getStatusCode().value();
     }
 
     public int callKakaoCancelApi(KakaoPayCancelDto kakaoPayCancelDto) {
-        try {
-            return callKakaoApi(kakaoCancelUrl, getKakaoPayCancelPayLoadData(kakaoPayCancelDto)).getStatusCode().value();
-        }catch(KakaoPayFailException e){
-            log.error("에러 발생"); // TODO 이런거 로그파일로 관리해야함
-            throw new UrgentMailException("카카오페이 취소하는 과정에서 에러발생",e);
-        }
-    }*/
+        return callKakaoApi(KAKAO_CANCEL_URL, getKakaoPayCancelPayLoadData(kakaoPayCancelDto)).getStatusCode().value();
+    }
 
     private ResponseEntity<String> callKakaoApi(String url, String payload) {
         HttpHeaders httpHeaders = new HttpHeaders();
@@ -91,18 +111,7 @@ public class KakaoPayUtil {
         );
     }
 
-
-    /*public KakaoPayDto getKakaoPayDto(String inputString, String pgToken) {
-        try {
-            KakaoPayDto kakaoPayDto = objectMapper.readValue(inputString, KakaoPayDto.class);
-            kakaoPayDto.setPgToken(pgToken);
-            return kakaoPayDto;
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("카카오페이 관련 값을 만드는데 실패했습니다.");
-        }
-    }*/
-
-    private String getKakaoPayReadyPayloadData(KakaoPaymentDto kakaoPaymentDto){
+    private String getKakaoPayReadyPayloadData(KakaoPaymentDto kakaoPaymentDto, String approvalUrl, String cancelUrl, String failUrl){
         return "cid=" + cid
                 + "&partner_order_id=" + kakaoPaymentDto.getPartnerOrderId()
                 + "&partner_user_id=" + kakaoPaymentDto.getPartnerUserId()
@@ -115,34 +124,35 @@ public class KakaoPayUtil {
                 + "&fail_url=" + failUrl;
     }
 
-    /*private String getKakaoPayApprovePayLoadData(KakaoPayDto kakaoPayDto){
-        return "cid=" + kakaoPayDto.getCid()
-                + "&tid=" + kakaoPayDto.getTid()
-                + "&partner_order_id=" + kakaoPayDto.getPartnerOrderId()
-                + "&partner_user_id=" + kakaoPayDto.getPartnerUserId()
-                + "&pg_token=" + kakaoPayDto.getPgToken();
+    private String getKakaoPayApprovePayLoadData(KakaoPayApproveDto kakaoPayApproveDto){
+        return "cid=" + cid
+                + "&tid=" + kakaoPayApproveDto.getTid()
+                + "&partner_order_id=" + kakaoPayApproveDto.getPartnerOrderId()
+                + "&partner_user_id=" + kakaoPayApproveDto.getPartnerUserId()
+                + "&pg_token=" + kakaoPayApproveDto.getPgToken();
     }
+
 
     private String getKakaoPayCancelPayLoadData(KakaoPayCancelDto kakaoPayCancelDto){
         return "cid=" + cid
                 + "&tid=" + kakaoPayCancelDto.getTid()
                 + "&cancel_amount=" + kakaoPayCancelDto.getCancelAmount()
                 + "&cancel_tax_free_amount=" + kakaoPayCancelDto.getCancelTaxFreeAmount();
-    }*/
+    }
 
-    private void savePaymentInfoToRedis(ResponseEntity<String> jsonResponse, PaymentCreationDto paymentCreationDto, KakaoPaymentDto paymentDto){
-        ValueOperations<String, String> vop = redisTemplate.opsForValue();
-        String tid;
-
+    private String getTid(ResponseEntity<String> jsonResponse){
         try {
-            tid = objectMapper.readTree(jsonResponse.getBody()).get("tid").asText();
+            JsonNode jsonNode = objectMapper.readTree(jsonResponse.getBody());
+            return jsonNode.get("tid").asText();
         } catch (Exception e) {
             throw new RuntimeException("파싱 실패");
         }
-        OrderCreationDto orderCreationDto = OrderCreationDto.builder().tid(tid).paymentCreationDto(paymentCreationDto).build();
+    }
 
+    private void saveRedis(String orderId, Object saveData){
+        ValueOperations<String, String> vop = redisTemplate.opsForValue();
         try {
-            vop.set(paymentDto.getPartnerOrderId(), objectMapper.writeValueAsString(orderCreationDto), Duration.ofMinutes(5));
+            vop.set(orderId, objectMapper.writeValueAsString(saveData), Duration.ofMinutes(5));
         } catch (JsonProcessingException e) {
             throw new RedisConnectionException("레디스에 들어갈 데이터를 만드는 과정에서 문제가 발생했습니다.");
         }

@@ -1,12 +1,16 @@
 package com.jeontongju.payment.domain;
 
 import com.jeontongju.payment.domain.common.BaseEntity;
-import com.jeontongju.payment.enums.PaymentMethodEnum;
-import com.jeontongju.payment.enums.PaymentTypeEnum;
+import com.jeontongju.payment.enums.temp.PaymentMethodEnum;
+import com.jeontongju.payment.enums.temp.PaymentTypeEnum;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.DynamicInsert;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -18,7 +22,10 @@ import javax.validation.constraints.NotNull;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
+@Builder
+@DynamicInsert
 public class Payment extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,6 +47,10 @@ public class Payment extends BaseEntity {
 
     @NotNull
     private Long paymentTaxFreeAmount;
+
+    @NotNull
+    @Column(columnDefinition = "boolean default true")
+    private boolean isDeleted;
 
     @OneToOne(mappedBy = "payment")
     private KakaoPayment kakaoPayment;
