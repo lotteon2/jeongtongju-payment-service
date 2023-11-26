@@ -1,8 +1,8 @@
 package com.jeontongju.payment.domain;
 
 import com.jeontongju.payment.domain.common.BaseEntity;
-import com.jeontongju.payment.enums.PaymentMethod;
-import com.jeontongju.payment.enums.PaymentType;
+import com.jeontongju.payment.enums.PaymentMethodEnum;
+import com.jeontongju.payment.enums.PaymentTypeEnum;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,11 +29,11 @@ public class Payment extends BaseEntity {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    private PaymentType paymentType;
+    private PaymentTypeEnum paymentType;
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    private PaymentMethod paymentMethod;
+    private PaymentMethodEnum paymentMethod;
 
     @NotNull
     private Long paymentAmount;
