@@ -1,4 +1,4 @@
-package com.jeontongju.payment.dto.temp;
+package com.jeontongju.payment.dto;
 
 import com.jeontongju.payment.enums.temp.PaymentMethodEnum;
 import com.jeontongju.payment.enums.temp.PaymentTypeEnum;
@@ -7,7 +7,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.validator.constraints.Range;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
@@ -36,6 +35,8 @@ public class PaymentCreationDto {
     private Long pointUsageAmount;
 
     private String couponCode;
+
+    private Long couponAmount;
 
     @NotEmpty(message = "상품 이미지는 필수 입니다.")
     private String productImg;

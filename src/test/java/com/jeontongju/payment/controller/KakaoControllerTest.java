@@ -1,9 +1,10 @@
 package com.jeontongju.payment.controller;
 
 import com.jeontongju.payment.ControllerTestUtil;
-import com.jeontongju.payment.dto.controller.MemberCreditChargeDto;
-import com.jeontongju.payment.dto.temp.PaymentCreationDto;
-import com.jeontongju.payment.dto.temp.ProductDto;
+import com.jeontongju.payment.dto.MemberCreditChargeDto;
+import com.jeontongju.payment.dto.PaymentCreationDto;
+import com.jeontongju.payment.dto.ProductDto;
+import com.jeontongju.payment.dto.temp.OrderInfoDto;
 import com.jeontongju.payment.enums.temp.MemberRoleEnum;
 import com.jeontongju.payment.enums.temp.PaymentMethodEnum;
 import com.jeontongju.payment.enums.temp.PaymentTypeEnum;
@@ -12,12 +13,17 @@ import com.jeontongju.payment.util.KakaoPayUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 
 import java.util.Arrays;
 import java.util.List;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@EmbeddedKafka( partitions = 1,
+        brokerProperties = { "listeners=PLAINTEXT://localhost:7777"},
+        ports = {7777})
 public class KakaoControllerTest extends ControllerTestUtil {
     @MockBean
     protected KakaoPayUtil kakaoPayUtil;
@@ -25,6 +31,8 @@ public class KakaoControllerTest extends ControllerTestUtil {
     protected PaymentService paymentService;
     @MockBean
     private RedisTemplate<String, String> redisTemplate;
+    @MockBean
+    private KafkaTemplate<String, OrderInfoDto> kafkaTemplate;
     
     @Test
     void seller는_주문이_불가능하다() throws Exception{
