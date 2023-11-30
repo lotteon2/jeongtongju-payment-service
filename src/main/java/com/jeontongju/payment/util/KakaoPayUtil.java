@@ -37,6 +37,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.net.URLEncoder;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -106,6 +107,7 @@ public class KakaoPayUtil {
                 .orderCreationDto(OrderCreationDto.builder()
                         .totalPrice(paymentCreationDto.getTotalAmount())
                         .consumerId(consumerId)
+                        .orderDate(LocalDateTime.now())
                         .orderId(kakaoPaymentDto.getPartnerOrderId())
                         .paymentType(PaymentTypeEnum.ORDER)
                         .productInfoDtoList(productInfo.getData())
