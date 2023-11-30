@@ -7,16 +7,19 @@ import com.jeontongju.payment.dto.KakaoPaymentDto;
 import com.jeontongju.payment.dto.MemberCreditChargeDto;
 import com.jeontongju.payment.dto.PaymentCreationDto;
 import com.jeontongju.payment.dto.PaymentDto;
+import com.jeontongju.payment.dto.temp.FeignFormat;
 import com.jeontongju.payment.dto.temp.KakaoPayApproveDto;
 import com.jeontongju.payment.dto.temp.KakaoPayCancelDto;
 import com.jeontongju.payment.dto.temp.OrderCreationDto;
 import com.jeontongju.payment.dto.temp.OrderInfoDto;
 import com.jeontongju.payment.dto.temp.ProductInfoDto;
+import com.jeontongju.payment.dto.temp.ProductSearchDto;
 import com.jeontongju.payment.dto.temp.ProductUpdateDto;
 import com.jeontongju.payment.dto.temp.UserCouponUpdateDto;
 import com.jeontongju.payment.dto.temp.UserPointUpdateDto;
 import com.jeontongju.payment.enums.temp.PaymentMethodEnum;
 import com.jeontongju.payment.enums.temp.PaymentTypeEnum;
+import com.jeontongju.payment.exception.KakaoPayException;
 import com.jeontongju.payment.exception.RedisConnectionException;
 import com.jeontongju.payment.feign.ProductFeignServiceClient;
 import lombok.RequiredArgsConstructor;
@@ -88,23 +91,11 @@ public class KakaoPayUtil {
                 .collect(Collectors.toList());
 
         // Feign을 요청하고 Feign이 200이 아니라면 예외 리턴
-//        FeignFormat<List<ProductInfoDto>> productInfo = productFeignServiceClient.getProductInfo(ProductSearchDto.builder()
-//                .productUpdateDtoList(productSearchDtoList).totalPrice(paymentCreationDto.getTotalAmount()).build());
-//        if(productInfo.getCode() != 200){
-//            throw new KakaoPayException("카카오페이 QR 코드를 만드는데 실패했습니다.");
-//        }
-        
-        
-        //TODO 무조건 지우기
-        List<ProductInfoDto> list = new ArrayList<>();
-        list.add(ProductInfoDto.builder()
-                .productId("test")
-                        .productName("test")
-                        .productCount(3L)
-                        .sellerId("seller")
-                        .sellerName("seeler")
-                        .productImg("hi")
-                .build());
+        FeignFormat<List<ProductInfoDto>> productInfo = productFeignServiceClient.getProductInfo(ProductSearchDto.builder()
+                .productUpdateDtoList(productSearchDtoList).totalPrice(paymentCreationDto.getTotalAmount()).build());
+        if(productInfo.getCode() != 200){
+            throw new KakaoPayException("카카오페이 QR 코드를 만드는데 실패했습니다.");
+        }
 
         Long consumerId = Long.valueOf(kakaoPaymentDto.getPartnerUserId());
         saveRedis(kakaoPaymentDto.getPartnerOrderId(), OrderInfoDto.builder()
@@ -117,9 +108,7 @@ public class KakaoPayUtil {
                         .consumerId(consumerId)
                         .orderId(kakaoPaymentDto.getPartnerOrderId())
                         .paymentType(PaymentTypeEnum.ORDER)
-                        //.productInfoDtoList(productInfo.getData())
-                        //TODO 무조건 지우기
-                        .productInfoDtoList(list)
+                        .productInfoDtoList(productInfo.getData())
                         .recipientName(paymentCreationDto.getRecipientName())
                         .recipientPhoneNumber(paymentCreationDto.getRecipientPhoneNumber())
                         .basicAddress(paymentCreationDto.getBasicAddress())

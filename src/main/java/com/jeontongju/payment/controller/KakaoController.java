@@ -89,7 +89,7 @@ public class KakaoController {
 
     @RequestMapping("/order-approve")
     public String kakaoOrderApprove(@RequestParam("partnerOrderId") String partnerOrderId,
-                               @RequestParam("pg_token") String pgToken){
+                                    @RequestParam("pg_token") String pgToken){
         OrderInfoDto orderInfoDto = commonApproveLogin(partnerOrderId, OrderInfoDto.class);
         orderInfoDto.getOrderCreationDto().setPgToken(pgToken);
 
