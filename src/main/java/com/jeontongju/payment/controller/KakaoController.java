@@ -42,6 +42,8 @@ public class KakaoController {
     private final PaymentService paymentService;
 
     private final String ORDER_TOPIC_NAME = "reduce-point";
+    private final String COUPON_TOPIC_NAME = "use-coupon";
+    private final String STOCK_TOPIC_NAME = "reduce-stock";
 
     @GetMapping("consumers/{consumerId}/credit-charge-history")
     public ResponseEntity<ResponseFormat<Page<CreditChargeHistoryDto>>> getConsumerCreditHistory(@PathVariable Long consumerId, Pageable pageable) {
@@ -90,7 +92,14 @@ public class KakaoController {
         OrderInfoDto orderInfoDto = redisUtil.commonApproveLogin(partnerOrderId, OrderInfoDto.class);
         orderInfoDto.getOrderCreationDto().setPgToken(pgToken);
 
-        orderInfoDtoKafkaProcessor.send(ORDER_TOPIC_NAME, orderInfoDto);
+        if(orderInfoDto.getUserPointUpdateDto().getPoint() != null) { // 포인트 사용의 경우 포인트 서버로 보낸다
+            orderInfoDtoKafkaProcessor.send(ORDER_TOPIC_NAME, orderInfoDto);
+        }else if(orderInfoDto.getUserCouponUpdateDto().getCouponCode() != null){ // 쿠폰 사용의 경우 쿠폰 서버로 보낸다(포인트 사용X)
+            orderInfoDtoKafkaProcessor.send(COUPON_TOPIC_NAME, orderInfoDto);
+        }else{ // 그 외의 케이스
+            orderInfoDtoKafkaProcessor.send(STOCK_TOPIC_NAME, orderInfoDto);
+        }
+
         return kakaoPayUtil.generatePageCloseCodeWithAlert(null);
     }
 

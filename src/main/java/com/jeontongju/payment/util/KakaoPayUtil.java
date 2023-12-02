@@ -94,24 +94,28 @@ public class KakaoPayUtil {
             throw new KakaoPayException("카카오페이 QR 코드를 만드는데 실패했습니다.");
         }
 
-        // Consumer에 Feign을 요청한다. (포인트가 부족한 경우는 예외 발생한다)
-        FeignFormat<Boolean> pointInfo = pointFeignServiceClient.checkConsumerPoint(UserPointUpdateDto.builder()
-                        .point(paymentCreationDto.getPointUsageAmount())
-                        .consumerId(Long.valueOf(kakaoPaymentDto.getPartnerUserId()))
-                        .build());
-        if(pointInfo.getCode() != 200){
-            throw new KakaoPayException("카카오페이 QR 코드를 만드는데 실패했습니다.");
+        if(paymentCreationDto.getPointUsageAmount()!=null) { // optional
+            // Consumer에 Feign을 요청한다. (포인트가 부족한 경우는 예외 발생한다)
+            FeignFormat<Boolean> pointInfo = pointFeignServiceClient.checkConsumerPoint(UserPointUpdateDto.builder()
+                    .point(paymentCreationDto.getPointUsageAmount())
+                    .consumerId(Long.valueOf(kakaoPaymentDto.getPartnerUserId()))
+                    .build());
+            if (pointInfo.getCode() != 200) {
+                throw new KakaoPayException("카카오페이 QR 코드를 만드는데 실패했습니다.");
+            }
         }
 
-        // coupon에 Feign을 요청한다. (쿠폰을 사용할 수 없는 경우는 예외 발생한다)
-        FeignFormat<Void> couponInfo = couponFeignServiceClient.checkCouponInfo(UserCouponUpdateDto.builder()
-                .consumerId(Long.valueOf(kakaoPaymentDto.getPartnerUserId()))
-                .couponCode(paymentCreationDto.getCouponCode())
-                .couponAmount(paymentCreationDto.getCouponAmount())
-                .totalAmount(paymentCreationDto.getTotalAmount())
-        .build());
-        if(couponInfo.getCode() != 200){
-            throw new KakaoPayException("카카오페이 QR 코드를 만드는데 실패했습니다.");
+        if(paymentCreationDto.getCouponCode()!=null) { // optional
+            // coupon에 Feign을 요청한다. (쿠폰을 사용할 수 없는 경우는 예외 발생한다)
+            FeignFormat<Void> couponInfo = couponFeignServiceClient.checkCouponInfo(UserCouponUpdateDto.builder()
+                    .consumerId(Long.valueOf(kakaoPaymentDto.getPartnerUserId()))
+                    .couponCode(paymentCreationDto.getCouponCode())
+                    .couponAmount(paymentCreationDto.getCouponAmount())
+                    .totalAmount(paymentCreationDto.getTotalAmount())
+                    .build());
+            if (couponInfo.getCode() != 200) {
+                throw new KakaoPayException("카카오페이 QR 코드를 만드는데 실패했습니다.");
+            }
         }
 
         Long consumerId = Long.valueOf(kakaoPaymentDto.getPartnerUserId());
