@@ -12,5 +12,4 @@ public class KafkaProcessor<T> {
     public void send(String topicName, T data){
         kafkaTemplate.send(topicName, data);
     }
-
 }
