@@ -10,10 +10,10 @@ import com.jeontongju.payment.enums.temp.PaymentMethodEnum;
 import com.jeontongju.payment.enums.temp.PaymentTypeEnum;
 import com.jeontongju.payment.service.PaymentService;
 import com.jeontongju.payment.util.KakaoPayUtil;
+import com.jeontongju.payment.util.OrderKafkaRouteUtil;
+import com.jeontongju.payment.util.RedisUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.util.LinkedMultiValueMap;
 
 import java.util.Arrays;
@@ -23,19 +23,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 public class KakaoControllerTest extends ControllerTestUtil {
     @MockBean
-    protected KakaoPayUtil kakaoPayUtil;
+    private KakaoPayUtil kakaoPayUtil;
     @MockBean
-    protected PaymentService paymentService;
+    private RedisUtil redisUtil;
     @MockBean
-    private RedisTemplate<String, String> redisTemplate;
+    private OrderKafkaRouteUtil<OrderInfoDto> orderInfoDtoKafkaRouteUtil;
     @MockBean
-    private KafkaTemplate<String, OrderInfoDto> kafkaTemplate;
+    private PaymentService paymentService;
+
 
     @Test
     void ROLE_MANAGER는_주문이_불가능하다() throws Exception{
         checkControllerFailConditions("/api/order", 1L, MemberRoleEnum.ROLE_MANAGER,
                 createPaymentCreationDto(PaymentTypeEnum.ORDER, PaymentMethodEnum.KAKAO, 0L, "123",10L,
-                        "test","test","test","test","","12345",10L,
+                        "test","test","test","test","","12345",10L,10L,
                         "test","10",10L),
                 "주문은 소비자만 할 수 있습니다.",new LinkedMultiValueMap<>(),status().isBadRequest()
         );
@@ -45,7 +46,7 @@ public class KakaoControllerTest extends ControllerTestUtil {
     void ROLE_ADMIN은_주문이_불가능하다() throws Exception{
         checkControllerFailConditions("/api/order", 1L, MemberRoleEnum.ROLE_ADMIN,
                 createPaymentCreationDto(PaymentTypeEnum.ORDER, PaymentMethodEnum.KAKAO, 0L, "123",10L,
-                        "test","test","test","test","","12345",10L,
+                        "test","test","test","test","","12345",10L,10L,
                         "test","10",10L),
                 "주문은 소비자만 할 수 있습니다.",new LinkedMultiValueMap<>(),status().isBadRequest()
         );
@@ -55,7 +56,7 @@ public class KakaoControllerTest extends ControllerTestUtil {
     void ROLE_USER는_주문이_가능하다() throws Exception{
         checkControllerSuccessConditions("/api/order", 1L, MemberRoleEnum.ROLE_USER,
                 createPaymentCreationDto(PaymentTypeEnum.ORDER, PaymentMethodEnum.KAKAO, null, null,null,
-                        "test","test","test","test","","12345",10L,
+                        "test","test","test","test","","12345",10L,10L,
                         "test","10",10L),new LinkedMultiValueMap<>(),
                 status().isOk()
         );
@@ -65,7 +66,7 @@ public class KakaoControllerTest extends ControllerTestUtil {
     void 쿠폰번호가_있는경우에는_쿠폰금액은_필수이다() throws Exception{
         checkControllerFailConditions("/api/order", 1L, MemberRoleEnum.ROLE_USER,
                 createPaymentCreationDto(PaymentTypeEnum.ORDER, PaymentMethodEnum.KAKAO, null, "123",null,
-                        "test","test","test","test","","12345",10L,
+                        "test","test","test","test","","12345",10L,10L,
                         "test","10",10L),
                 "쿠폰 관련 정보가 이상합니다.",new LinkedMultiValueMap<>(),status().isBadRequest()
         );
@@ -75,7 +76,7 @@ public class KakaoControllerTest extends ControllerTestUtil {
     void 쿠폰금액이_있는경우에는_쿠폰번호는_필수이다() throws Exception{
         checkControllerFailConditions("/api/order", 1L, MemberRoleEnum.ROLE_USER,
                 createPaymentCreationDto(PaymentTypeEnum.ORDER, PaymentMethodEnum.KAKAO, 100L, null,100L,
-                        "test","test","test","test","","12345",10L,
+                        "test","test","test","test","","12345",10L,10L,
                         "test","10",10L),
                 "쿠폰 관련 정보가 이상합니다.",new LinkedMultiValueMap<>(),status().isBadRequest()
         );
@@ -128,7 +129,7 @@ public class KakaoControllerTest extends ControllerTestUtil {
     private PaymentCreationDto createPaymentCreationDto(PaymentTypeEnum paymentType, PaymentMethodEnum paymentMethod,
                                                         Long pointUsageAmount, String couponCode, Long couponAmount, String productImg,
                                                         String recipientName, String recipientPhoneNumber, String basicAddress,
-                                                        String addressDetail, String zoneCode, Long totalAmount,
+                                                        String addressDetail, String zoneCode, Long totalAmount,Long realAmount,
                                                         String titleName, String productId, Long productCount
                                                         )
     {
@@ -147,6 +148,7 @@ public class KakaoControllerTest extends ControllerTestUtil {
                 .addressDetail(addressDetail)
                 .zoneCode(zoneCode)
                 .totalAmount(totalAmount)
+                .realAmount(realAmount)
                 .titleName(titleName)
                 .products(list)
                 .build();
