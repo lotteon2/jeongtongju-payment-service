@@ -18,7 +18,7 @@ import org.springframework.http.HttpStatus;
 @Builder
 @AllArgsConstructor
 public class ResponseFormat<T> {
-    private HttpStatus code;
+    private int code;
     private String message;
     private String detail;
 

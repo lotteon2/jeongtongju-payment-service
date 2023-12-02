@@ -58,6 +58,9 @@ public class PaymentCreationDto {
     @NotNull(message = "결제금액은 필수 입니다.")
     private Long totalAmount;
 
+    @NotNull(message = "실결제금액은 필수 입니다.")
+    private Long realAmount;
+
     @NotEmpty(message = "결제명은 필수 입니다.")
     private String titleName;
 
