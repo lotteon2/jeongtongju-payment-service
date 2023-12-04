@@ -78,7 +78,7 @@ public class KakaoPayUtil {
     private final ObjectMapper objectMapper;
 
     public ResponseEntity<String> createOrderInfoWithKakao(PaymentCreationDto paymentCreationDto, KakaoPaymentDto kakaoPaymentDto) {
-        ResponseEntity<String> exchange = callKakaoApi(KAKAO_READY_URL, kakaoPaymentDto.generateKakaoPayApprovePayReady(cid,orderApprovalUrl, orderCancelUrl, orderFailUrl ));
+        ResponseEntity<String> exchange = callKakaoApi(KAKAO_READY_URL, kakaoPaymentDto.generateKakaoPayApprovePayReady(cid,paymentCreationDto.getRealAmount(),orderApprovalUrl, orderCancelUrl, orderFailUrl ));
 
         // ProductUpdateDto 만드는 표현식(Feign 및 재고차감 하라는 요청을 보낼때 사용)
         List<ProductUpdateDto> productSearchDtoList = paymentCreationDto.getProducts().stream()
@@ -145,7 +145,7 @@ public class KakaoPayUtil {
     }
 
     public ResponseEntity<String> createCreditInfoWithKakao(MemberCreditChargeDto memberCreditChargeDto, KakaoPaymentDto kakaoPaymentDto) {
-        ResponseEntity<String> exchange = callKakaoApi( KAKAO_READY_URL, kakaoPaymentDto.generateKakaoPayApprovePayReady(cid,creditApprovalUrl, creditCancelUrl, creditFailUrl ));
+        ResponseEntity<String> exchange = callKakaoApi( KAKAO_READY_URL, kakaoPaymentDto.generateKakaoPayApprovePayReady(cid,kakaoPaymentDto.getTotalAmount(),creditApprovalUrl, creditCancelUrl, creditFailUrl ));
         redisUtil.saveRedis(kakaoPaymentDto.getPartnerOrderId(), PaymentDto.builder()
                 .consumerId(Long.valueOf(kakaoPaymentDto.getPartnerUserId()))
                 .chargeCredit(memberCreditChargeDto.getChargeCredit())

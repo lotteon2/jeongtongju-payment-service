@@ -30,13 +30,13 @@ public class KakaoPaymentDto {
                 .build();
     }
 
-    public String generateKakaoPayApprovePayReady(String cid, String approvalUrl, String cancelUrl, String failUrl){
+    public String generateKakaoPayApprovePayReady(String cid, long realPrice, String approvalUrl, String cancelUrl, String failUrl){
         return "cid=" + cid
                 + "&partner_order_id=" + this.getPartnerOrderId()
                 + "&partner_user_id=" + this.getPartnerUserId()
                 + "&item_name=" + URLEncoder.encode(this.getItemName())
                 + "&quantity=" + this.getQuantity()
-                + "&total_amount=" + this.getTotalAmount()
+                + "&total_amount=" + realPrice
                 + "&tax_free_amount=" + this.getTaxFreeAmount()
                 + "&approval_url=" + approvalUrl + "?partnerOrderId=" + this.getPartnerOrderId()
                 + "&cancel_url=" + cancelUrl
