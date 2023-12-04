@@ -9,6 +9,7 @@ import com.jeontongju.payment.dto.PaymentDto;
 import com.jeontongju.payment.dto.temp.FeignFormat;
 import com.jeontongju.payment.dto.temp.KakaoPayApproveDto;
 import com.jeontongju.payment.dto.temp.KakaoPayCancelDto;
+import com.jeontongju.payment.dto.temp.KakaoPayMethod;
 import com.jeontongju.payment.dto.temp.OrderCreationDto;
 import com.jeontongju.payment.dto.temp.OrderInfoDto;
 import com.jeontongju.payment.dto.temp.ProductInfoDto;
@@ -124,13 +125,14 @@ public class KakaoPayUtil {
                 .userCouponUpdateDto(UserCouponUpdateDto.builder().consumerId(consumerId).couponCode(paymentCreationDto.getCouponCode())
                         .couponAmount(paymentCreationDto.getCouponAmount()).build())
                         .productUpdateDto(productSearchDtoList)
-                        .orderCreationDto(OrderCreationDto.builder()
+                .orderCreationDto(OrderCreationDto.builder()
                         .totalPrice(paymentCreationDto.getTotalAmount())
                         .consumerId(consumerId)
                         .orderDate(LocalDateTime.now())
                         .orderId(kakaoPaymentDto.getPartnerOrderId())
                         .paymentType(PaymentTypeEnum.ORDER)
                         .paymentMethod(PaymentMethodEnum.KAKAO)
+                        .paymentInfo(KakaoPayMethod.builder().tid(getTid(exchange)).build())
                         .productInfoDtoList(productInfo.getData())
                         .recipientName(paymentCreationDto.getRecipientName())
                         .recipientPhoneNumber(paymentCreationDto.getRecipientPhoneNumber())

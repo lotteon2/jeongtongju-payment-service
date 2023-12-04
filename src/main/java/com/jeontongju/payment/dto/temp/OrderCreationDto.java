@@ -40,9 +40,5 @@ public class OrderCreationDto {
     // 결제 정보
     private PaymentTypeEnum paymentType;
     private PaymentMethodEnum paymentMethod;
-    private String paymentUniqueKey;
-
-    public void setPaymentUniqueKey(String paymentUniqueKey) {
-        this.paymentUniqueKey = paymentUniqueKey;
-    }
+    private PaymentMethod paymentInfo;
 }

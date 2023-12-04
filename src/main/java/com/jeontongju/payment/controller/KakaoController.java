@@ -5,6 +5,7 @@ import com.jeontongju.payment.dto.MemberCreditChargeDto;
 import com.jeontongju.payment.dto.PaymentCreationDto;
 import com.jeontongju.payment.dto.PaymentDto;
 import com.jeontongju.payment.dto.response.CreditChargeHistoryDto;
+import com.jeontongju.payment.dto.temp.KakaoPayMethod;
 import com.jeontongju.payment.dto.temp.OrderInfoDto;
 import com.jeontongju.payment.dto.temp.ResponseFormat;
 import com.jeontongju.payment.enums.temp.MemberRoleEnum;
@@ -86,8 +87,10 @@ public class KakaoController {
     public String kakaoOrderApprove(@RequestParam("partnerOrderId") String partnerOrderId,
                                     @RequestParam("pg_token") String pgToken){
         OrderInfoDto orderInfoDto = redisUtil.commonApproveLogin(partnerOrderId, OrderInfoDto.class);
-        orderInfoDto.getOrderCreationDto().setPaymentUniqueKey(pgToken);
-        orderInfoDtoKafkaRouteUtil.send(orderInfoDto, orderInfoDto);
+        KakaoPayMethod kakaoPayMethod = (KakaoPayMethod) orderInfoDto.getOrderCreationDto().getPaymentInfo();
+        kakaoPayMethod.setPgToken(pgToken);
+
+        orderInfoDtoKafkaRouteUtil.send(orderInfoDto);
         return kakaoPayUtil.generatePageCloseCodeWithAlert(null);
     }
 
