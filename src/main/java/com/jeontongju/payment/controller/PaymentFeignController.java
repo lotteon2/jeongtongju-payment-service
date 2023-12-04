@@ -9,10 +9,10 @@ import com.jeontongju.payment.util.KakaoPayUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpStatus;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RequestMapping("/")
@@ -22,8 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class PaymentFeignController {
     private final KakaoPayUtil kakaoPayUtil;
 
-    @PostMapping("/{paymentMethod}/pay-approve")
-    public FeignFormat<Void> approveKakaopay(@PathVariable("paymentMethod") PaymentMethodEnum paymentMethodEnum, @RequestBody PaymentMethod paymentMethod) {
+    @PostMapping("pay-approve")
+    public FeignFormat<Void> approveKakaopay(@RequestParam("paymentMethodEnum") PaymentMethodEnum paymentMethodEnum, @RequestBody PaymentMethod paymentMethod) {
         if(paymentMethodEnum == PaymentMethodEnum.KAKAO){
             KakaoPayMethod kakaoPayMethod = (KakaoPayMethod) paymentMethod;
             kakaoPayUtil.callKakaoApproveApi(KakaoPayApproveDto.builder()

@@ -3,7 +3,6 @@ package com.jeontongju.payment.feign;
 import com.jeontongju.payment.dto.temp.FeignFormat;
 import com.jeontongju.payment.dto.temp.ProductInfoDto;
 import com.jeontongju.payment.dto.temp.ProductSearchDto;
-import com.jeontongju.payment.dto.temp.ProductUpdateDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

@@ -20,7 +20,7 @@ public class ProductInfoDto {
     private String productName;
     private Long productPrice;
     private Long productCount;
-    private String sellerId;
+    private Long sellerId;
     private String sellerName;
     private String productImg;
 }
