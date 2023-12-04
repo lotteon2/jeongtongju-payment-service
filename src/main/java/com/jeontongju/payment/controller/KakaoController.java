@@ -35,7 +35,6 @@ import javax.validation.Valid;
 @RequestMapping("/api")
 @RestController
 @RequiredArgsConstructor
-@Slf4j
 public class KakaoController {
     private final KakaoPayUtil kakaoPayUtil;
     private final RedisUtil redisUtil;

@@ -12,6 +12,8 @@ import lombok.NoArgsConstructor;
 public class KakaoPayMethod implements PaymentMethod {
     private String tid;
     private String pgToken;
+    private String partnerOrderId;
+    private String partnerUserId;
 
     public void setPgToken(String pgToken) {
         this.pgToken = pgToken;
