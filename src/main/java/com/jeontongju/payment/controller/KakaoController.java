@@ -86,7 +86,7 @@ public class KakaoController {
     public String kakaoOrderApprove(@RequestParam("partnerOrderId") String partnerOrderId,
                                     @RequestParam("pg_token") String pgToken){
         OrderInfoDto orderInfoDto = redisUtil.commonApproveLogin(partnerOrderId, OrderInfoDto.class);
-        orderInfoDto.getOrderCreationDto().setPgToken(pgToken);
+        orderInfoDto.getOrderCreationDto().setPaymentUniqueKey(pgToken);
         orderInfoDtoKafkaRouteUtil.send(orderInfoDto, orderInfoDto);
         return kakaoPayUtil.generatePageCloseCodeWithAlert(null);
     }

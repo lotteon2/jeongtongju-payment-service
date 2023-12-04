@@ -130,6 +130,7 @@ public class KakaoPayUtil {
                         .orderDate(LocalDateTime.now())
                         .orderId(kakaoPaymentDto.getPartnerOrderId())
                         .paymentType(PaymentTypeEnum.ORDER)
+                        .paymentMethod(PaymentMethodEnum.KAKAO)
                         .productInfoDtoList(productInfo.getData())
                         .recipientName(paymentCreationDto.getRecipientName())
                         .recipientPhoneNumber(paymentCreationDto.getRecipientPhoneNumber())

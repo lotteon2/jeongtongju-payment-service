@@ -1,5 +1,6 @@
 package com.jeontongju.payment.dto.temp;
 
+import com.jeontongju.payment.enums.temp.PaymentMethodEnum;
 import com.jeontongju.payment.enums.temp.PaymentTypeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,7 +26,6 @@ public class OrderCreationDto {
     private Long consumerId;
     private LocalDateTime orderDate;
     private String orderId;
-    private PaymentTypeEnum paymentType;
 
     // 주문-상품 정보
     private List<ProductInfoDto> productInfoDtoList;
@@ -38,9 +38,11 @@ public class OrderCreationDto {
     private String zoneCode;
 
     // 결제 정보
-    private String pgToken;
+    private PaymentTypeEnum paymentType;
+    private PaymentMethodEnum paymentMethod;
+    private String paymentUniqueKey;
 
-    public void setPgToken(String pgToken) {
-        this.pgToken = pgToken;
+    public void setPaymentUniqueKey(String paymentUniqueKey) {
+        this.paymentUniqueKey = paymentUniqueKey;
     }
 }
