@@ -29,6 +29,9 @@ public class PaymentOrder extends BaseEntity {
     @NotNull
     private Long ordersId;
 
+    @NotNull
+    private Long totalPrice;
+
     private Long minusPointAmount;
 
     private Long minusCouponAmount;
