@@ -1,4 +1,4 @@
-package com.jeontongju.payment.dto.controller;
+package com.jeontongju.payment.dto;
 
 import com.jeontongju.payment.enums.temp.PaymentMethodEnum;
 import com.jeontongju.payment.enums.temp.PaymentTypeEnum;

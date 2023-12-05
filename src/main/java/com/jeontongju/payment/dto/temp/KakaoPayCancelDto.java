@@ -15,4 +15,11 @@ public class KakaoPayCancelDto {
     private String tid;
     private Long cancelAmount;
     private Long cancelTaxFreeAmount;
+
+    public String generateKakaoPayCancelData(String cid){
+        return "cid=" + cid
+                + "&tid=" + this.getTid()
+                + "&cancel_amount=" + this.getCancelAmount()
+                + "&cancel_tax_free_amount=" + this.getCancelTaxFreeAmount();
+    }
 }

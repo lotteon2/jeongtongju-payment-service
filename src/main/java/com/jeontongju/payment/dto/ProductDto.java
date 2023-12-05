@@ -1,4 +1,4 @@
-package com.jeontongju.payment.dto.temp;
+package com.jeontongju.payment.dto;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

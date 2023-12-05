@@ -16,4 +16,12 @@ public class KakaoPayApproveDto {
     private String partnerOrderId;
     private String partnerUserId;
     private String pgToken;
+
+    public String generateKakaoPayApproveData(String cid){
+        return "cid=" + cid
+                + "&tid=" + this.getTid()
+                + "&partner_order_id=" + this.getPartnerOrderId()
+                + "&partner_user_id=" + this.getPartnerUserId()
+                + "&pg_token=" + this.getPgToken();
+    }
 }
