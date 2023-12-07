@@ -1,5 +1,6 @@
 package com.jeontongju.payment.service;
 
+import com.jeontongju.order.dto.temp.OrderCancelDto;
 import com.jeontongju.payment.domain.KakaoPayment;
 import com.jeontongju.payment.domain.Payment;
 import com.jeontongju.payment.domain.PaymentOrder;
@@ -10,6 +11,7 @@ import com.jeontongju.payment.dto.temp.KakaoPayApproveDto;
 import com.jeontongju.payment.dto.temp.KakaoPayCancelDto;
 import com.jeontongju.payment.dto.temp.KakaoPayMethod;
 import com.jeontongju.payment.dto.temp.OrderInfoDto;
+import com.jeontongju.payment.dto.temp.PaymentInfoDto;
 import com.jeontongju.payment.enums.temp.PaymentMethodEnum;
 import com.jeontongju.payment.enums.temp.PaymentTypeEnum;
 import com.jeontongju.payment.exception.KakaoPayApproveException;
@@ -59,13 +61,13 @@ public class PaymentService {
                     .credit(paymentDto.getChargeCredit())
                     .tid(paymentDto.getTid())
                     .cancelAmount(paymentDto.getPaymentAmount())
-                    .cancelTaxFreeAmount(paymentDto.getPaymentTaxFreeAmount())
+                    .cancelTaxFreeAmount(0L)
                     .build());
         }catch(Exception e){
             kakaoPayUtil.callKakaoCancelApi(KakaoPayCancelDto.builder()
                     .tid(paymentDto.getTid())
                     .cancelAmount(paymentDto.getPaymentAmount())
-                    .cancelTaxFreeAmount(paymentDto.getPaymentTaxFreeAmount())
+                    .cancelTaxFreeAmount(0L)
                     .build());
             throw new KafkaException("카프카 예외 발생");
         }
@@ -84,7 +86,7 @@ public class PaymentService {
                 .paymentType(PaymentTypeEnum.ORDER)
                 .paymentMethod(orderInfoDto.getOrderCreationDto().getPaymentMethod())
                 .paymentAmount(realPrice)
-                .paymentTaxFreeAmount(realPrice/10)
+                .paymentTaxFreeAmount(0L)
         .build();
         paymentRepository.save(payment);
 
@@ -117,7 +119,30 @@ public class PaymentService {
         }
     }
 
+    public void cancelPayment(OrderCancelDto orderCancelDto){
+        PaymentOrder paymentOrder = paymentOrderRepository.findByOrdersId(orderCancelDto.getOrdersId());
+        Payment payment = paymentOrder.getPayment();
+        long returnValue = paymentOrder.getTotalPrice() - paymentOrder.getMinusPointAmount() - paymentOrder.getMinusCouponAmount();
+
+        if(orderCancelDto.getCancelAmount()!=null && orderCancelDto.getCancelAmount() > 0){ // 취소금액이 존재하면 상품 취소임
+            returnValue = orderCancelDto.getCancelAmount();
+        }
+
+        cancelPayment(payment,returnValue);
+    }
+
     public Page<CreditChargeHistoryDto> getConsumerCreditHistory(Long consumerId, Pageable pageable){
         return paymentRepository.findCreditChargeHistoryByConsumerIdAndPaymentType(consumerId, PaymentTypeEnum.CREDIT, pageable);
+    }
+
+    public PaymentInfoDto getPaymentInfo(String orderId){
+        return paymentOrderRepository.findByOrdersIdWithDto(orderId);
+    }
+
+    private void cancelPayment(Payment payment, long returnValue){
+        if(payment.getPaymentMethod() == PaymentMethodEnum.KAKAO){
+            KakaoPayment kakaoPayment = kakaoPaymentRepository.findByPaymentPaymentId(payment.getPaymentId());
+            kakaoPayUtil.callKakaoCancelApi(KakaoPayCancelDto.builder().tid(kakaoPayment.getTid()).cancelAmount(returnValue).cancelTaxFreeAmount(0L).build());
+        }
     }
 }

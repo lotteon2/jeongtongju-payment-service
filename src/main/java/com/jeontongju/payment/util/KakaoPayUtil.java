@@ -152,7 +152,7 @@ public class KakaoPayUtil {
                 .paymentType(memberCreditChargeDto.getPaymentType())
                 .paymentMethod(PaymentMethodEnum.KAKAO)
                 .paymentAmount(kakaoPaymentDto.getTotalAmount())
-                .paymentTaxFreeAmount(kakaoPaymentDto.getTaxFreeAmount())
+                .paymentTaxFreeAmount(0L)
                 .tid(getTid(exchange))
                 .build());
         return exchange;

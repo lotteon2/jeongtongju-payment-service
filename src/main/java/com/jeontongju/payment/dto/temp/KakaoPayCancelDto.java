@@ -20,6 +20,6 @@ public class KakaoPayCancelDto {
         return "cid=" + cid
                 + "&tid=" + this.getTid()
                 + "&cancel_amount=" + this.getCancelAmount()
-                + "&cancel_tax_free_amount=" + this.getCancelTaxFreeAmount();
+                + "&cancel_tax_free_amount=" + 0L;
     }
 }
