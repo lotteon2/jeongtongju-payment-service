@@ -27,7 +27,7 @@ public class PaymentDto {
                 .paymentType(paymentDto.getPaymentType())
                 .paymentMethod(paymentDto.getPaymentMethod())
                 .paymentAmount(paymentDto.getPaymentAmount())
-                .paymentTaxFreeAmount(paymentDto.getPaymentTaxFreeAmount())
+                .paymentTaxFreeAmount(0L)
                 .build();
     }
 }

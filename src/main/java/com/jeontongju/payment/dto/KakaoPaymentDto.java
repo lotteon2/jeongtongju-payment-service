@@ -26,7 +26,7 @@ public class KakaoPaymentDto {
                 .itemName(titleName)
                 .quantity(1L)
                 .totalAmount(totalAmount)
-                .taxFreeAmount(totalAmount/10)
+                .taxFreeAmount(0L)
                 .build();
     }
 
@@ -37,7 +37,7 @@ public class KakaoPaymentDto {
                 + "&item_name=" + URLEncoder.encode(this.getItemName())
                 + "&quantity=" + this.getQuantity()
                 + "&total_amount=" + realPrice
-                + "&tax_free_amount=" + this.getTaxFreeAmount()
+                + "&tax_free_amount=" + 0L
                 + "&approval_url=" + approvalUrl + "?partnerOrderId=" + this.getPartnerOrderId()
                 + "&cancel_url=" + cancelUrl
                 + "&fail_url=" + failUrl;
