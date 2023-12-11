@@ -13,4 +13,6 @@ public class PaymentInfoDto {
     private Long minusPointAmount;
     private Long minusCouponAmount;
     private String couponCode;
+    private Long totalPrice;
+    private long realPrice;
 }
