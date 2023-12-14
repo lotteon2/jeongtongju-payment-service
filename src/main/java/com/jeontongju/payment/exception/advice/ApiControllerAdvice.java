@@ -1,7 +1,9 @@
 package com.jeontongju.payment.exception.advice;
 
+import com.jeontongju.payment.exception.CouponAmountEmptyException;
 import com.jeontongju.payment.exception.InvalidPermissionException;
 import com.jeontongju.payment.exception.KakaoPayApproveException;
+import com.jeontongju.payment.exception.KakaoPayException;
 import com.jeontongju.payment.exception.RedisConnectionException;
 import com.jeontongju.payment.exception.response.ErrorResponse;
 import lombok.RequiredArgsConstructor;
@@ -23,11 +25,27 @@ public class ApiControllerAdvice {
                 .build();
     }
 
+    @ExceptionHandler(CouponAmountEmptyException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleCouponAmountEmptyException(CouponAmountEmptyException e) {
+        return ErrorResponse.builder()
+                .message(e.getMessage())
+                .build();
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     protected ErrorResponse handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         return ErrorResponse.builder()
                 .message(e.getBindingResult().getFieldErrors().get(0).getDefaultMessage())
+                .build();
+    }
+
+    @ExceptionHandler(KakaoPayException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    protected ErrorResponse handleKakaoPayException(KakaoPayException e) {
+        return ErrorResponse.builder()
+                .message(e.getMessage())
                 .build();
     }
 

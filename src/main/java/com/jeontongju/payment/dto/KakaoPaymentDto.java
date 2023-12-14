@@ -3,6 +3,7 @@ package com.jeontongju.payment.dto;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.net.URLEncoder;
 import java.util.UUID;
 
 /**
@@ -25,7 +26,20 @@ public class KakaoPaymentDto {
                 .itemName(titleName)
                 .quantity(1L)
                 .totalAmount(totalAmount)
-                .taxFreeAmount(totalAmount/10)
+                .taxFreeAmount(0L)
                 .build();
+    }
+
+    public String generateKakaoPayApprovePayReady(String cid, long realPrice, String approvalUrl, String cancelUrl, String failUrl){
+        return "cid=" + cid
+                + "&partner_order_id=" + this.getPartnerOrderId()
+                + "&partner_user_id=" + this.getPartnerUserId()
+                + "&item_name=" + URLEncoder.encode(this.getItemName())
+                + "&quantity=" + this.getQuantity()
+                + "&total_amount=" + realPrice
+                + "&tax_free_amount=" + 0L
+                + "&approval_url=" + approvalUrl + "?partnerOrderId=" + this.getPartnerOrderId()
+                + "&cancel_url=" + cancelUrl
+                + "&fail_url=" + failUrl;
     }
 }
