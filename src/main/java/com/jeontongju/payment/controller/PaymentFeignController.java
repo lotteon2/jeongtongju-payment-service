@@ -1,9 +1,9 @@
 package com.jeontongju.payment.controller;
 
-import com.jeontongju.payment.dto.temp.FeignFormat;
-import com.jeontongju.payment.dto.temp.OrderInfoDto;
-import com.jeontongju.payment.dto.temp.PaymentInfoDto;
 import com.jeontongju.payment.service.PaymentService;
+import io.github.bitbox.bitbox.dto.FeignFormat;
+import io.github.bitbox.bitbox.dto.OrderInfoDto;
+import io.github.bitbox.bitbox.dto.PaymentInfoDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpStatus;

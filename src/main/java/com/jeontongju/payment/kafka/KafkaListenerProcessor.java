@@ -1,9 +1,10 @@
 package com.jeontongju.payment.kafka;
 
-import com.jeontongju.order.dto.temp.OrderCancelDto;
-import com.jeontongju.payment.dto.temp.KakaoPayCancelDto;
 import com.jeontongju.payment.service.PaymentService;
 import com.jeontongju.payment.util.KakaoPayUtil;
+import io.github.bitbox.bitbox.dto.KakaoPayCancelDto;
+import io.github.bitbox.bitbox.dto.OrderCancelDto;
+import io.github.bitbox.bitbox.util.KafkaTopicNameInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
@@ -13,15 +14,13 @@ import org.springframework.stereotype.Component;
 public class KafkaListenerProcessor {
     private final KakaoPayUtil kakaoPayUtil;
     private final PaymentService paymentService;
-    private final String KAKAO_CANCEL_TOPIC = "cancel-kakaopay";
-    private final String PAY_CANCEL_TOPIC = "cancel-order-payment";
 
-    @KafkaListener(topics = KAKAO_CANCEL_TOPIC)
+    @KafkaListener(topics = KafkaTopicNameInfo.CANCEL_KAKAOPAY)
     public void cancelKakaoPay(KakaoPayCancelDto kakaoPayCancelDto) {
         kakaoPayUtil.callKakaoCancelApi(kakaoPayCancelDto);
     }
 
-    @KafkaListener(topics = PAY_CANCEL_TOPIC)
+    @KafkaListener(topics = KafkaTopicNameInfo.CANCEL_ORDER_PAYMENT)
     public void cancelPayment(OrderCancelDto orderCancelDto){
         paymentService.cancelPayment(orderCancelDto);
     }
