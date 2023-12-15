@@ -1,7 +1,7 @@
 package com.jeontongju.payment.feign;
 
-import com.jeontongju.payment.dto.temp.FeignFormat;
-import com.jeontongju.payment.dto.temp.UserCouponUpdateDto;
+import io.github.bitbox.bitbox.dto.FeignFormat;
+import io.github.bitbox.bitbox.dto.UserCouponUpdateDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;

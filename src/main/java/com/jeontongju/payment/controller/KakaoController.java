@@ -5,16 +5,16 @@ import com.jeontongju.payment.dto.MemberCreditChargeDto;
 import com.jeontongju.payment.dto.PaymentCreationDto;
 import com.jeontongju.payment.dto.PaymentDto;
 import com.jeontongju.payment.dto.response.CreditChargeHistoryDto;
-import com.jeontongju.payment.dto.temp.KakaoPayMethod;
-import com.jeontongju.payment.dto.temp.OrderInfoDto;
-import com.jeontongju.payment.dto.temp.ResponseFormat;
-import com.jeontongju.payment.enums.temp.MemberRoleEnum;
 import com.jeontongju.payment.exception.CouponAmountEmptyException;
 import com.jeontongju.payment.exception.InvalidPermissionException;
 import com.jeontongju.payment.service.PaymentService;
 import com.jeontongju.payment.util.KakaoPayUtil;
 import com.jeontongju.payment.util.OrderKafkaRouteUtil;
 import com.jeontongju.payment.util.RedisUtil;
+import io.github.bitbox.bitbox.dto.KakaoPayMethod;
+import io.github.bitbox.bitbox.dto.OrderInfoDto;
+import io.github.bitbox.bitbox.dto.ResponseFormat;
+import io.github.bitbox.bitbox.enums.MemberRoleEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -42,12 +42,8 @@ public class KakaoController {
 
     @GetMapping("consumers/{consumerId}/credit-charge-history")
     public ResponseEntity<ResponseFormat<Page<CreditChargeHistoryDto>>> getConsumerCreditHistory(@PathVariable Long consumerId, Pageable pageable) {
-        return ResponseEntity.ok().body(ResponseFormat.<Page<CreditChargeHistoryDto>>builder()
-                .code(HttpStatus.OK.value())
-                .message(HttpStatus.OK.getReasonPhrase())
-                .detail("크레딧 충전 내역 조회 성공")
-                .data(paymentService.getConsumerCreditHistory(consumerId, pageable))
-                .build());
+        return ResponseEntity.ok().body(ResponseFormat.<Page<CreditChargeHistoryDto>>builder().code(HttpStatus.OK.value()).message(HttpStatus.OK.getReasonPhrase())
+                .detail("크레딧 충전 내역 조회 성공").data(paymentService.getConsumerCreditHistory(consumerId, pageable)).build());
     }
 
     @PostMapping("/order")
@@ -98,7 +94,7 @@ public class KakaoController {
     }
 
     private void checkConsumerRole(MemberRoleEnum memberRole, String message) {
-        if(memberRole != MemberRoleEnum.ROLE_USER){
+        if(memberRole != MemberRoleEnum.ROLE_CONSUMER){
             throw new InvalidPermissionException(message);
         }
     }
