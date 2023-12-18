@@ -98,6 +98,7 @@ public class KakaoPayUtil {
             FeignFormat<Boolean> pointInfo = pointFeignServiceClient.checkConsumerPoint(UserPointUpdateDto.builder()
                     .point(paymentCreationDto.getPointUsageAmount())
                     .consumerId(Long.valueOf(kakaoPaymentDto.getPartnerUserId()))
+                    .totalAmount(paymentCreationDto.getTotalAmount())
                     .build());
             if (pointInfo.getCode() != 200) {
                 throw new KakaoPayException("포인트가 부족합니다");
@@ -110,7 +111,6 @@ public class KakaoPayUtil {
                     .consumerId(Long.valueOf(kakaoPaymentDto.getPartnerUserId()))
                     .couponCode(paymentCreationDto.getCouponCode())
                     .couponAmount(paymentCreationDto.getCouponAmount())
-                    .totalAmount(paymentCreationDto.getTotalAmount())
                     .build());
             if (couponInfo.getCode() != 200) {
                 throw new KakaoPayException("쿠폰을 사용할 수 없습니다.");
@@ -119,10 +119,9 @@ public class KakaoPayUtil {
 
         Long consumerId = Long.valueOf(kakaoPaymentDto.getPartnerUserId());
         redisUtil.saveRedis(kakaoPaymentDto.getPartnerOrderId(), OrderInfoDto.builder()
-                .userPointUpdateDto(UserPointUpdateDto.builder().consumerId(consumerId).point(paymentCreationDto.getPointUsageAmount()).build())
+                .userPointUpdateDto(UserPointUpdateDto.builder().consumerId(consumerId).point(paymentCreationDto.getPointUsageAmount()).totalAmount(paymentCreationDto.getTotalAmount()).build())
                 .userCouponUpdateDto(UserCouponUpdateDto.builder().consumerId(consumerId).couponCode(paymentCreationDto.getCouponCode())
-                        .couponAmount(paymentCreationDto.getCouponAmount())
-                        .totalAmount(paymentCreationDto.getTotalAmount()).build())
+                        .couponAmount(paymentCreationDto.getCouponAmount()).build())
                         .productUpdateDto(productSearchDtoList)
                 .orderCreationDto(OrderCreationDto.builder()
                         .totalPrice(paymentCreationDto.getTotalAmount())
