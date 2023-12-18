@@ -38,9 +38,6 @@ public class PaymentCreationDto {
 
     private Long couponAmount;
 
-    @NotEmpty(message = "상품 이미지는 필수 입니다.")
-    private String productImg;
-
     @NotEmpty(message = "받는 사람 이름은 필수 입니다.")
     private String recipientName;
 
