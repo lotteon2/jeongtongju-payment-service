@@ -91,9 +91,7 @@ public class KakaoPayUtil {
         // Product에 Feign을 요청한다. (재고가 없거나 프론트에서 넘겨준 상품의 총가격과 상품 가격이 다르면 약속된 비정상 포맷을 반환한다)
         FeignFormat<List<ProductInfoDto>> productInfo = productFeignServiceClient.getProductInfo(ProductSearchDto.builder()
                 .productUpdateDtoList(productSearchDtoList).totalPrice(paymentCreationDto.getTotalAmount()).build());
-        if(productInfo.getCode() != 200){
-            throw new KakaoPayException("카카오페이 QR 코드를 만드는데 실패했습니다.");
-        }
+
 
         if(paymentCreationDto.getPointUsageAmount()!=null) { // optional
             // Consumer에 Feign을 요청한다. (포인트가 부족한 경우는 예외 발생한다)
@@ -102,7 +100,7 @@ public class KakaoPayUtil {
                     .consumerId(Long.valueOf(kakaoPaymentDto.getPartnerUserId()))
                     .build());
             if (pointInfo.getCode() != 200) {
-                throw new KakaoPayException("카카오페이 QR 코드를 만드는데 실패했습니다.");
+                throw new KakaoPayException("포인트가 부족합니다");
             }
         }
 
@@ -115,7 +113,7 @@ public class KakaoPayUtil {
                     .totalAmount(paymentCreationDto.getTotalAmount())
                     .build());
             if (couponInfo.getCode() != 200) {
-                throw new KakaoPayException("카카오페이 QR 코드를 만드는데 실패했습니다.");
+                throw new KakaoPayException("쿠폰을 사용할 수 없습니다.");
             }
         }
 
@@ -123,7 +121,8 @@ public class KakaoPayUtil {
         redisUtil.saveRedis(kakaoPaymentDto.getPartnerOrderId(), OrderInfoDto.builder()
                 .userPointUpdateDto(UserPointUpdateDto.builder().consumerId(consumerId).point(paymentCreationDto.getPointUsageAmount()).build())
                 .userCouponUpdateDto(UserCouponUpdateDto.builder().consumerId(consumerId).couponCode(paymentCreationDto.getCouponCode())
-                        .couponAmount(paymentCreationDto.getCouponAmount()).build())
+                        .couponAmount(paymentCreationDto.getCouponAmount())
+                        .totalAmount(paymentCreationDto.getTotalAmount()).build())
                         .productUpdateDto(productSearchDtoList)
                 .orderCreationDto(OrderCreationDto.builder()
                         .totalPrice(paymentCreationDto.getTotalAmount())
