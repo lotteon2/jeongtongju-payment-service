@@ -36,7 +36,7 @@ public class KakaoControllerTest extends ControllerTestUtil {
     void ROLE_MANAGER는_주문이_불가능하다() throws Exception{
         checkControllerFailConditions("/api/order", 1L, MemberRoleEnum.ROLE_SELLER,
                 createPaymentCreationDto(PaymentTypeEnum.ORDER, PaymentMethodEnum.KAKAO, 1L, "123",10L,
-                        "test","test","test","test","","12345",10L,10L,
+                        "test","test","test","","12345",10L,10L,
                         "test","10",10L),
                 "주문은 소비자만 할 수 있습니다.",new LinkedMultiValueMap<>(),status().isBadRequest()
         );
@@ -46,7 +46,7 @@ public class KakaoControllerTest extends ControllerTestUtil {
     void ROLE_ADMIN은_주문이_불가능하다() throws Exception{
         checkControllerFailConditions("/api/order", 1L, MemberRoleEnum.ROLE_ADMIN,
                 createPaymentCreationDto(PaymentTypeEnum.ORDER, PaymentMethodEnum.KAKAO, 1L, "123",10L,
-                        "test","test","test","test","","12345",10L,10L,
+                        "test","test","test","","12345",10L,10L,
                         "test","10",10L),
                 "주문은 소비자만 할 수 있습니다.",new LinkedMultiValueMap<>(),status().isBadRequest()
         );
@@ -56,7 +56,7 @@ public class KakaoControllerTest extends ControllerTestUtil {
     void ROLE_USER는_주문이_가능하다() throws Exception{
         checkControllerSuccessConditions("/api/order", 1L, MemberRoleEnum.ROLE_CONSUMER,
                 createPaymentCreationDto(PaymentTypeEnum.ORDER, PaymentMethodEnum.KAKAO, null, null,null,
-                        "test","test","test","test","","12345",10L,10L,
+                        "test","test","test","","12345",10L,10L,
                         "test","10",10L),new LinkedMultiValueMap<>(),
                 status().isOk()
         );
@@ -66,7 +66,7 @@ public class KakaoControllerTest extends ControllerTestUtil {
     void 쿠폰번호가_있는경우에는_쿠폰금액은_필수이다() throws Exception{
         checkControllerFailConditions("/api/order", 1L, MemberRoleEnum.ROLE_CONSUMER,
                 createPaymentCreationDto(PaymentTypeEnum.ORDER, PaymentMethodEnum.KAKAO, null, "123",null,
-                        "test","test","test","test","","12345",10L,10L,
+                        "test","test","test","","12345",10L,10L,
                         "test","10",10L),
                 "쿠폰 관련 정보가 이상합니다.",new LinkedMultiValueMap<>(),status().isBadRequest()
         );
@@ -76,7 +76,7 @@ public class KakaoControllerTest extends ControllerTestUtil {
     void 쿠폰금액이_있는경우에는_쿠폰번호는_필수이다() throws Exception{
         checkControllerFailConditions("/api/order", 1L, MemberRoleEnum.ROLE_CONSUMER,
                 createPaymentCreationDto(PaymentTypeEnum.ORDER, PaymentMethodEnum.KAKAO, 100L, null,100L,
-                        "test","test","test","test","","12345",10L,10L,
+                        "test","test","test","","12345",10L,10L,
                         "test","10",10L),
                 "쿠폰 관련 정보가 이상합니다.",new LinkedMultiValueMap<>(),status().isBadRequest()
         );
@@ -127,7 +127,7 @@ public class KakaoControllerTest extends ControllerTestUtil {
     }
 
     private PaymentCreationDto createPaymentCreationDto(PaymentTypeEnum paymentType, PaymentMethodEnum paymentMethod,
-                                                        Long pointUsageAmount, String couponCode, Long couponAmount, String productImg,
+                                                        Long pointUsageAmount, String couponCode, Long couponAmount,
                                                         String recipientName, String recipientPhoneNumber, String basicAddress,
                                                         String addressDetail, String zoneCode, Long totalAmount,Long realAmount,
                                                         String titleName, String productId, Long productCount
@@ -141,7 +141,6 @@ public class KakaoControllerTest extends ControllerTestUtil {
                 .pointUsageAmount(pointUsageAmount)
                 .couponCode(couponCode)
                 .couponAmount(couponAmount)
-                .productImg(productImg)
                 .recipientName(recipientName)
                 .recipientPhoneNumber(recipientPhoneNumber)
                 .basicAddress(basicAddress)
