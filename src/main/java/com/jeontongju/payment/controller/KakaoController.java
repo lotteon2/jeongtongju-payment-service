@@ -16,6 +16,7 @@ import io.github.bitbox.bitbox.dto.OrderInfoDto;
 import io.github.bitbox.bitbox.dto.ResponseFormat;
 import io.github.bitbox.bitbox.enums.MemberRoleEnum;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -34,6 +35,7 @@ import javax.validation.Valid;
 @RequestMapping("/api")
 @RestController
 @RequiredArgsConstructor
+@Slf4j
 public class KakaoController {
     private final KakaoPayUtil kakaoPayUtil;
     private final RedisUtil redisUtil;
@@ -81,6 +83,7 @@ public class KakaoController {
     public String kakaoOrderApprove(@RequestParam("partnerOrderId") String partnerOrderId,
                                     @RequestParam("pg_token") String pgToken){
         OrderInfoDto orderInfoDto = redisUtil.commonApproveLogin(partnerOrderId, OrderInfoDto.class);
+        log.info("value = {}",orderInfoDto.getUserCouponUpdateDto().getTotalAmount());
         KakaoPayMethod kakaoPayMethod = (KakaoPayMethod) orderInfoDto.getOrderCreationDto().getPaymentInfo();
         kakaoPayMethod.setPgToken(pgToken);
 
