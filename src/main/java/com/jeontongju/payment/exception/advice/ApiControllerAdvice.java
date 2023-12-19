@@ -76,7 +76,7 @@ public class ApiControllerAdvice {
     }
 
     @ExceptionHandler(FeignClientResponseException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseStatus(HttpStatus.OK)
     public KakaoErrorResponse handleFeignClientResponseException(FeignClientResponseException e){
         return KakaoErrorResponse.builder()
                 .message(e.getFailureType())
