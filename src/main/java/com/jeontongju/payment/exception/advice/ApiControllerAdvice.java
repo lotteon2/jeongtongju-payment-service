@@ -1,11 +1,13 @@
 package com.jeontongju.payment.exception.advice;
 
 import com.jeontongju.payment.exception.CouponAmountEmptyException;
+import com.jeontongju.payment.exception.FeignClientResponseException;
 import com.jeontongju.payment.exception.InvalidPermissionException;
 import com.jeontongju.payment.exception.KakaoPayApproveException;
 import com.jeontongju.payment.exception.KakaoPayException;
 import com.jeontongju.payment.exception.RedisConnectionException;
 import com.jeontongju.payment.exception.response.ErrorResponse;
+import com.jeontongju.payment.exception.response.KakaoErrorResponse;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.KafkaException;
 import org.springframework.http.HttpStatus;
@@ -35,7 +37,7 @@ public class ApiControllerAdvice {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    protected ErrorResponse handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+    public ErrorResponse handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         return ErrorResponse.builder()
                 .message(e.getBindingResult().getFieldErrors().get(0).getDefaultMessage())
                 .build();
@@ -43,7 +45,7 @@ public class ApiControllerAdvice {
 
     @ExceptionHandler(KakaoPayException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    protected ErrorResponse handleKakaoPayException(KakaoPayException e) {
+    public ErrorResponse handleKakaoPayException(KakaoPayException e) {
         return ErrorResponse.builder()
                 .message(e.getMessage())
                 .build();
@@ -51,7 +53,7 @@ public class ApiControllerAdvice {
 
     @ExceptionHandler(RedisConnectionException.class)
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
-    protected ErrorResponse handleMethodRedirectException(RedisConnectionException e) {
+    public ErrorResponse handleMethodRedirectException(RedisConnectionException e) {
         return ErrorResponse.builder()
                 .message(e.getMessage())
                 .build();
@@ -59,7 +61,7 @@ public class ApiControllerAdvice {
 
     @ExceptionHandler(KafkaException.class)
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
-    protected ErrorResponse handleMethodRedirectException(KafkaException e) {
+    public ErrorResponse handleMethodRedirectException(KafkaException e) {
         return ErrorResponse.builder()
                 .message(e.getMessage())
                 .build();
@@ -67,9 +69,17 @@ public class ApiControllerAdvice {
 
     @ExceptionHandler(KakaoPayApproveException.class)
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
-    protected ErrorResponse handleMethodRedirectException(KakaoPayApproveException e) {
+    public ErrorResponse handleMethodRedirectException(KakaoPayApproveException e) {
         return ErrorResponse.builder()
                 .message(e.getMessage())
                 .build();
+    }
+
+    @ExceptionHandler(FeignClientResponseException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public KakaoErrorResponse handleFeignClientResponseException(FeignClientResponseException e){
+        return KakaoErrorResponse.builder()
+                .message(e.getFailureType())
+        .build();
     }
 }

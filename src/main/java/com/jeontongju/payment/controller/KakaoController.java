@@ -74,7 +74,7 @@ public class KakaoController {
     public String kakaoCreditApprove(@RequestParam("partnerOrderId") String partnerOrderId,
                                @RequestParam("pg_token") String pgToken){
         paymentService.createPayment(partnerOrderId, pgToken, redisUtil.commonApproveLogin(partnerOrderId, PaymentDto.class));
-        return kakaoPayUtil.generatePageCloseCodeWithAlert(null);
+        return kakaoPayUtil.generatePageCloseCodeWithAlert("credit");
     }
 
     @RequestMapping("/order-approve")
@@ -85,7 +85,7 @@ public class KakaoController {
         kakaoPayMethod.setPgToken(pgToken);
 
         orderInfoDtoKafkaRouteUtil.send(orderInfoDto);
-        return kakaoPayUtil.generatePageCloseCodeWithAlert(null);
+        return kakaoPayUtil.generatePageCloseCodeWithAlert("credit");
     }
 
     @RequestMapping({"/fail", "/cancel"})

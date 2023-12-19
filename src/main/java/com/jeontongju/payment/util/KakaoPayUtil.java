@@ -6,7 +6,7 @@ import com.jeontongju.payment.dto.KakaoPaymentDto;
 import com.jeontongju.payment.dto.MemberCreditChargeDto;
 import com.jeontongju.payment.dto.PaymentCreationDto;
 import com.jeontongju.payment.dto.PaymentDto;
-import com.jeontongju.payment.exception.KakaoPayException;
+import com.jeontongju.payment.exception.FeignClientResponseException;
 import com.jeontongju.payment.feign.CouponFeignServiceClient;
 import com.jeontongju.payment.feign.PointFeignServiceClient;
 import com.jeontongju.payment.feign.ProductFeignServiceClient;
@@ -66,6 +66,9 @@ public class KakaoPayUtil {
     @Value("${kakaoPayKey}")
     private String kakaoPayKey;
 
+    @Value("${frontSuccessUrl}")
+    private String frontSuccessUrl;
+
     private final String KAKAO_READY_URL = "https://kapi.kakao.com/v1/payment/ready";
 
     private final String KAKAO_APPROVE_URL = "https://kapi.kakao.com/v1/payment/approve";
@@ -91,37 +94,31 @@ public class KakaoPayUtil {
         // Product에 Feign을 요청한다. (재고가 없거나 프론트에서 넘겨준 상품의 총가격과 상품 가격이 다르면 약속된 비정상 포맷을 반환한다)
         FeignFormat<List<ProductInfoDto>> productInfo = productFeignServiceClient.getProductInfo(ProductSearchDto.builder()
                 .productUpdateDtoList(productSearchDtoList).totalPrice(paymentCreationDto.getTotalAmount()).build());
-
+        checkValidationCondition(productInfo);
 
         if(paymentCreationDto.getPointUsageAmount()!=null) { // optional
             // Consumer에 Feign을 요청한다. (포인트가 부족한 경우는 예외 발생한다)
-            FeignFormat<Boolean> pointInfo = pointFeignServiceClient.checkConsumerPoint(UserPointUpdateDto.builder()
+            checkValidationCondition(pointFeignServiceClient.checkConsumerPoint(UserPointUpdateDto.builder()
                     .point(paymentCreationDto.getPointUsageAmount())
                     .consumerId(Long.valueOf(kakaoPaymentDto.getPartnerUserId()))
                     .totalAmount(paymentCreationDto.getTotalAmount())
-                    .build());
-            if (pointInfo.getCode() != 200) {
-                throw new KakaoPayException("포인트가 부족합니다");
-            }
+                    .build()));
         }
 
         if(paymentCreationDto.getCouponCode()!=null) { // optional
             // coupon에 Feign을 요청한다. (쿠폰을 사용할 수 없는 경우는 예외 발생한다)
-            FeignFormat<Void> couponInfo = couponFeignServiceClient.checkCouponInfo(UserCouponUpdateDto.builder()
+            checkValidationCondition(couponFeignServiceClient.checkCouponInfo(UserCouponUpdateDto.builder()
                     .consumerId(Long.valueOf(kakaoPaymentDto.getPartnerUserId()))
                     .couponCode(paymentCreationDto.getCouponCode())
                     .couponAmount(paymentCreationDto.getCouponAmount())
-                    .build());
-            if (couponInfo.getCode() != 200) {
-                throw new KakaoPayException("쿠폰을 사용할 수 없습니다.");
-            }
+                    .build()));
         }
 
         Long consumerId = Long.valueOf(kakaoPaymentDto.getPartnerUserId());
         redisUtil.saveRedis(kakaoPaymentDto.getPartnerOrderId(), OrderInfoDto.builder()
                 .userPointUpdateDto(UserPointUpdateDto.builder().consumerId(consumerId).point(paymentCreationDto.getPointUsageAmount()).totalAmount(paymentCreationDto.getTotalAmount()).build())
                 .userCouponUpdateDto(UserCouponUpdateDto.builder().consumerId(consumerId).couponCode(paymentCreationDto.getCouponCode())
-                        .couponAmount(paymentCreationDto.getCouponAmount()).build())
+                        .couponAmount(paymentCreationDto.getCouponAmount()).totalAmount(paymentCreationDto.getTotalAmount()).build())
                         .productUpdateDto(productSearchDtoList)
                 .orderCreationDto(OrderCreationDto.builder()
                         .totalPrice(paymentCreationDto.getTotalAmount())
@@ -172,14 +169,13 @@ public class KakaoPayUtil {
         return htmlCode;
     }
 
-    public String generatePageCloseCodeWithAlert(String alertMessage) {
+    public String generatePageCloseCodeWithAlert(String queryParam) {
+        String path = frontSuccessUrl + "type?=" + queryParam;
+
         String htmlCode = "<!DOCTYPE html><html><head></head><body>";
         htmlCode += "<script>";
         htmlCode += "window.onload = function() {";
-        if(alertMessage != null) {
-            htmlCode += "  alert('" + alertMessage + "');";
-        }
-        htmlCode += "  window.close();";
+        htmlCode += " window.location.href = '" + path + "';";
         htmlCode += "};";
         htmlCode += "</script>";
         htmlCode += "</body></html>";
@@ -208,6 +204,12 @@ public class KakaoPayUtil {
             return jsonNode.get("tid").asText();
         } catch (Exception e) {
             throw new RuntimeException("파싱 실패");
+        }
+    }
+
+    private void checkValidationCondition(FeignFormat<?> feignFormat){
+        if(feignFormat.getFailure()!=null){
+            throw new FeignClientResponseException(feignFormat.getFailure());
         }
     }
 }
