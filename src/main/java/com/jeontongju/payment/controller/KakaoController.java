@@ -85,7 +85,7 @@ public class KakaoController {
         kakaoPayMethod.setPgToken(pgToken);
 
         orderInfoDtoKafkaRouteUtil.send(orderInfoDto);
-        return kakaoPayUtil.generatePageCloseCodeWithAlert("credit");
+        return kakaoPayUtil.generatePageCloseCodeWithAlert("pay");
     }
 
     @RequestMapping({"/fail", "/cancel"})

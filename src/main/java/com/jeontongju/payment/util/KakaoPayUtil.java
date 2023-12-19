@@ -171,7 +171,7 @@ public class KakaoPayUtil {
     }
 
     public String generatePageCloseCodeWithAlert(String queryParam) {
-        String path = frontSuccessUrl + "type?=" + queryParam;
+        String path = frontSuccessUrl + "?type=" + queryParam;
 
         String htmlCode = "<!DOCTYPE html><html><head></head><body>";
         htmlCode += "<script>";
