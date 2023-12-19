@@ -120,7 +120,7 @@ public class KakaoPayUtil {
                 .userPointUpdateDto(UserPointUpdateDto.builder().consumerId(consumerId).point(paymentCreationDto.getPointUsageAmount()).totalAmount(paymentCreationDto.getTotalAmount()).build())
                 .userCouponUpdateDto(UserCouponUpdateDto.builder().consumerId(consumerId).couponCode(paymentCreationDto.getCouponCode())
                         .couponAmount(paymentCreationDto.getCouponAmount()).totalAmount(paymentCreationDto.getTotalAmount()).build())
-                        .productUpdateDto(productSearchDtoList)
+                .productUpdateDto(productSearchDtoList)
                 .orderCreationDto(OrderCreationDto.builder()
                         .totalPrice(paymentCreationDto.getTotalAmount())
                         .consumerId(consumerId)
