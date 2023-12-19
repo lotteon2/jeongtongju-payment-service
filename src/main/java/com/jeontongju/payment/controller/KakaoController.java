@@ -35,7 +35,6 @@ import javax.validation.Valid;
 @RequestMapping("/api")
 @RestController
 @RequiredArgsConstructor
-@Slf4j
 public class KakaoController {
     private final KakaoPayUtil kakaoPayUtil;
     private final RedisUtil redisUtil;
@@ -83,7 +82,6 @@ public class KakaoController {
     public String kakaoOrderApprove(@RequestParam("partnerOrderId") String partnerOrderId,
                                     @RequestParam("pg_token") String pgToken){
         OrderInfoDto orderInfoDto = redisUtil.commonApproveLogin(partnerOrderId, OrderInfoDto.class);
-        log.info("value = {}",orderInfoDto.getUserCouponUpdateDto().getTotalAmount());
         KakaoPayMethod kakaoPayMethod = (KakaoPayMethod) orderInfoDto.getOrderCreationDto().getPaymentInfo();
         kakaoPayMethod.setPgToken(pgToken);
 
