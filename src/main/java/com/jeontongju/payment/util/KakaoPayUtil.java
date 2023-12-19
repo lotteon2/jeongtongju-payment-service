@@ -111,7 +111,8 @@ public class KakaoPayUtil {
                     .consumerId(Long.valueOf(kakaoPaymentDto.getPartnerUserId()))
                     .couponCode(paymentCreationDto.getCouponCode())
                     .couponAmount(paymentCreationDto.getCouponAmount())
-                    .build()));
+                    .totalAmount(paymentCreationDto.getTotalAmount())
+            .build()));
         }
 
         Long consumerId = Long.valueOf(kakaoPaymentDto.getPartnerUserId());
