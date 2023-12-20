@@ -3,20 +3,27 @@ package com.jeontongju.payment.controller;
 import com.jeontongju.payment.dto.KakaoPaymentDto;
 import com.jeontongju.payment.dto.MemberCreditChargeDto;
 import com.jeontongju.payment.dto.PaymentCreationDto;
-import com.jeontongju.payment.dto.PaymentDto;
+import com.jeontongju.payment.dto.CreditPaymentDto;
+import com.jeontongju.payment.dto.SubscriptionPaymentDto;
 import com.jeontongju.payment.dto.response.CreditChargeHistoryDto;
+import com.jeontongju.payment.dto.SubscriptionRequestDto;
 import com.jeontongju.payment.exception.CouponAmountEmptyException;
+import com.jeontongju.payment.exception.FeignClientResponseException;
 import com.jeontongju.payment.exception.InvalidPermissionException;
+import com.jeontongju.payment.feign.PointFeignServiceClient;
 import com.jeontongju.payment.service.PaymentService;
 import com.jeontongju.payment.util.KakaoPayUtil;
 import com.jeontongju.payment.util.OrderKafkaRouteUtil;
 import com.jeontongju.payment.util.RedisUtil;
+import io.github.bitbox.bitbox.dto.FeignFormat;
 import io.github.bitbox.bitbox.dto.KakaoPayMethod;
 import io.github.bitbox.bitbox.dto.OrderInfoDto;
 import io.github.bitbox.bitbox.dto.ResponseFormat;
+import io.github.bitbox.bitbox.enums.FailureTypeEnum;
 import io.github.bitbox.bitbox.enums.MemberRoleEnum;
+import io.github.bitbox.bitbox.enums.PaymentMethodEnum;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -40,11 +47,29 @@ public class KakaoController {
     private final RedisUtil redisUtil;
     private final OrderKafkaRouteUtil<OrderInfoDto> orderInfoDtoKafkaRouteUtil;
     private final PaymentService paymentService;
+    private final PointFeignServiceClient pointFeignServiceClient;
+    @Value("${subscriptionFee}")
+    private Long subscriptionFee;
 
     @GetMapping("consumers/{consumerId}/credit-charge-history")
     public ResponseEntity<ResponseFormat<Page<CreditChargeHistoryDto>>> getConsumerCreditHistory(@PathVariable Long consumerId, Pageable pageable) {
         return ResponseEntity.ok().body(ResponseFormat.<Page<CreditChargeHistoryDto>>builder().code(HttpStatus.OK.value()).message(HttpStatus.OK.getReasonPhrase())
                 .detail("크레딧 충전 내역 조회 성공").data(paymentService.getConsumerCreditHistory(consumerId, pageable)).build());
+    }
+
+    @PostMapping("/subscription")
+    public ResponseEntity<String> createSubscription(@RequestHeader Long memberId, @RequestBody @Valid SubscriptionRequestDto subscriptionRequestDto){
+        // 이미 구독권이 존재하는 경우
+        if(pointFeignServiceClient.getConsumerSubscription(memberId).getData()){
+            throw new FeignClientResponseException(FailureTypeEnum.EXISTING_SUBSCRIPTION_PAYMENT);
+        }
+
+        ResponseEntity<String> result = null;
+        if(subscriptionRequestDto.getPaymentMethod() == PaymentMethodEnum.KAKAO) {
+            result = kakaoPayUtil.createSubscription(KakaoPaymentDto.convertPaymentDto(String.valueOf(memberId), subscriptionRequestDto.getItemName(), subscriptionFee));
+        }
+
+        return result;
     }
 
     @PostMapping("/order")
@@ -71,10 +96,17 @@ public class KakaoController {
                 memberCreditChargeDto.getItemName(), memberCreditChargeDto.getChargeCredit()));
     }
 
+    @RequestMapping("/subscription-approve")
+    public String kakaoSubscriptionApprove(@RequestParam("partnerOrderId") String partnerOrderId,
+                                     @RequestParam("pg_token") String pgToken){
+        paymentService.createSubscription(partnerOrderId, pgToken, redisUtil.commonApproveLogin(partnerOrderId, SubscriptionPaymentDto.class));
+        return kakaoPayUtil.generatePageCloseCodeWithAlert("subscribe");
+    }
+
     @RequestMapping("/credit-approve")
     public String kakaoCreditApprove(@RequestParam("partnerOrderId") String partnerOrderId,
                                @RequestParam("pg_token") String pgToken){
-        paymentService.createPayment(partnerOrderId, pgToken, redisUtil.commonApproveLogin(partnerOrderId, PaymentDto.class));
+        paymentService.createPayment(partnerOrderId, pgToken, redisUtil.commonApproveLogin(partnerOrderId, CreditPaymentDto.class));
         return kakaoPayUtil.generatePageCloseCodeWithAlert("credit");
     }
 
