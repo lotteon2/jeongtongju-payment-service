@@ -5,7 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jeontongju.payment.dto.KakaoPaymentDto;
 import com.jeontongju.payment.dto.MemberCreditChargeDto;
 import com.jeontongju.payment.dto.PaymentCreationDto;
-import com.jeontongju.payment.dto.PaymentDto;
+import com.jeontongju.payment.dto.CreditPaymentDto;
+import com.jeontongju.payment.dto.SubscriptionPaymentDto;
 import com.jeontongju.payment.exception.FeignClientResponseException;
 import com.jeontongju.payment.feign.CouponFeignServiceClient;
 import com.jeontongju.payment.feign.PointFeignServiceClient;
@@ -45,6 +46,9 @@ public class KakaoPayUtil {
     @Value("${cid}")
     private String cid;
 
+    @Value("${subscriptionCid}")
+    private String subscriptionCid;
+
     @Value("${orderApprovalUrl}")
     private String orderApprovalUrl;
 
@@ -63,6 +67,15 @@ public class KakaoPayUtil {
     @Value("${creditFailUrl}")
     private String creditFailUrl;
 
+    @Value("${subscriptionApprovalUrl}")
+    private String subscriptionApprovalUrl;
+
+    @Value("${subscriptionCancelUrl}")
+    private String subscriptionCancelUrl;
+
+    @Value("${subscriptionFailUrl}")
+    private String subscriptionFailUrl;
+
     @Value("${kakaoPayKey}")
     private String kakaoPayKey;
 
@@ -74,11 +87,25 @@ public class KakaoPayUtil {
     private final String KAKAO_APPROVE_URL = "https://kapi.kakao.com/v1/payment/approve";
 
     private final String KAKAO_CANCEL_URL = "https://kapi.kakao.com/v1/payment/cancel";
+
     private final ProductFeignServiceClient productFeignServiceClient;
     private final PointFeignServiceClient pointFeignServiceClient;
     private final CouponFeignServiceClient couponFeignServiceClient;
     private final RedisUtil redisUtil;
     private final ObjectMapper objectMapper;
+
+    public ResponseEntity<String> createSubscription(KakaoPaymentDto kakaoPaymentDto){
+        ResponseEntity<String> exchange = callKakaoApi( KAKAO_READY_URL, kakaoPaymentDto.generateKakaoPayApprovePayReady(subscriptionCid,kakaoPaymentDto.getTotalAmount(),subscriptionApprovalUrl, subscriptionCancelUrl, subscriptionFailUrl ));
+        redisUtil.saveRedis(kakaoPaymentDto.getPartnerOrderId(), SubscriptionPaymentDto.builder()
+                .consumerId(Long.valueOf(kakaoPaymentDto.getPartnerUserId()))
+                .paymentType(PaymentTypeEnum.SUBSCRIPTION)
+                .paymentAmount(kakaoPaymentDto.getTotalAmount())
+                .paymentMethod(PaymentMethodEnum.KAKAO)
+                .paymentTaxFreeAmount(0L)
+                .tid(getTargetToken(exchange,"tid"))
+        .build());
+        return exchange;
+    }
 
     public ResponseEntity<String> createOrderInfoWithKakao(PaymentCreationDto paymentCreationDto, KakaoPaymentDto kakaoPaymentDto) {
         ResponseEntity<String> exchange = callKakaoApi(KAKAO_READY_URL, kakaoPaymentDto.generateKakaoPayApprovePayReady(cid,paymentCreationDto.getRealAmount(),orderApprovalUrl, orderCancelUrl, orderFailUrl ));
@@ -128,7 +155,7 @@ public class KakaoPayUtil {
                         .orderId(kakaoPaymentDto.getPartnerOrderId())
                         .paymentType(PaymentTypeEnum.ORDER)
                         .paymentMethod(PaymentMethodEnum.KAKAO)
-                        .paymentInfo(KakaoPayMethod.builder().tid(getTid(exchange)).partnerUserId(String.valueOf(consumerId)).partnerOrderId(kakaoPaymentDto.getPartnerOrderId()).build())
+                        .paymentInfo(KakaoPayMethod.builder().tid(getTargetToken(exchange,"tid")).partnerUserId(String.valueOf(consumerId)).partnerOrderId(kakaoPaymentDto.getPartnerOrderId()).build())
                         .productInfoDtoList(productInfo.getData())
                         .recipientName(paymentCreationDto.getRecipientName())
                         .recipientPhoneNumber(paymentCreationDto.getRecipientPhoneNumber())
@@ -142,20 +169,24 @@ public class KakaoPayUtil {
 
     public ResponseEntity<String> createCreditInfoWithKakao(MemberCreditChargeDto memberCreditChargeDto, KakaoPaymentDto kakaoPaymentDto) {
         ResponseEntity<String> exchange = callKakaoApi( KAKAO_READY_URL, kakaoPaymentDto.generateKakaoPayApprovePayReady(cid,kakaoPaymentDto.getTotalAmount(),creditApprovalUrl, creditCancelUrl, creditFailUrl ));
-        redisUtil.saveRedis(kakaoPaymentDto.getPartnerOrderId(), PaymentDto.builder()
+        redisUtil.saveRedis(kakaoPaymentDto.getPartnerOrderId(), CreditPaymentDto.builder()
                 .consumerId(Long.valueOf(kakaoPaymentDto.getPartnerUserId()))
                 .chargeCredit(memberCreditChargeDto.getChargeCredit())
                 .paymentType(memberCreditChargeDto.getPaymentType())
                 .paymentMethod(PaymentMethodEnum.KAKAO)
                 .paymentAmount(kakaoPaymentDto.getTotalAmount())
                 .paymentTaxFreeAmount(0L)
-                .tid(getTid(exchange))
+                .tid(getTargetToken(exchange,"tid"))
                 .build());
         return exchange;
     }
 
     public int callKakaoApproveApi(KakaoPayApproveDto kakaoPayApproveDto) {
         return callKakaoApi(KAKAO_APPROVE_URL, kakaoPayApproveDto.generateKakaoPayApproveData(cid)).getStatusCode().value();
+    }
+
+    public ResponseEntity<String> callKakaoSubscriptionApproveApi(KakaoPayApproveDto kakaoPayApproveDto) {
+        return callKakaoApi(KAKAO_APPROVE_URL, kakaoPayApproveDto.generateKakaoPayApproveData(subscriptionCid));
     }
 
     public int callKakaoCancelApi(KakaoPayCancelDto kakaoPayCancelDto) {
@@ -184,6 +215,15 @@ public class KakaoPayUtil {
         return htmlCode;
     }
 
+    public String getTargetToken(ResponseEntity<String> jsonResponse, String parsingToken){
+        try {
+            JsonNode jsonNode = objectMapper.readTree(jsonResponse.getBody());
+            return jsonNode.get(parsingToken).asText();
+        } catch (Exception e) {
+            throw new RuntimeException("파싱 실패");
+        }
+    }
+
     private ResponseEntity<String> callKakaoApi(String url, String payload) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -197,15 +237,6 @@ public class KakaoPayUtil {
                 requestEntity,
                 String.class
         );
-    }
-
-    private String getTid(ResponseEntity<String> jsonResponse){
-        try {
-            JsonNode jsonNode = objectMapper.readTree(jsonResponse.getBody());
-            return jsonNode.get("tid").asText();
-        } catch (Exception e) {
-            throw new RuntimeException("파싱 실패");
-        }
     }
 
     private void checkValidationCondition(FeignFormat<?> feignFormat){

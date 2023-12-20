@@ -3,7 +3,8 @@ package com.jeontongju.payment.service;
 import com.jeontongju.payment.domain.KakaoPayment;
 import com.jeontongju.payment.domain.Payment;
 import com.jeontongju.payment.domain.PaymentOrder;
-import com.jeontongju.payment.dto.PaymentDto;
+import com.jeontongju.payment.dto.CreditPaymentDto;
+import com.jeontongju.payment.dto.SubscriptionPaymentDto;
 import com.jeontongju.payment.dto.response.CreditChargeHistoryDto;
 import com.jeontongju.payment.exception.KakaoPayApproveException;
 import com.jeontongju.payment.repository.KakaoPaymentRepository;
@@ -14,23 +15,29 @@ import io.github.bitbox.bitbox.dto.CreditUpdateDto;
 import io.github.bitbox.bitbox.dto.KakaoPayApproveDto;
 import io.github.bitbox.bitbox.dto.KakaoPayCancelDto;
 import io.github.bitbox.bitbox.dto.KakaoPayMethod;
+import io.github.bitbox.bitbox.dto.KakaoSubscription;
 import io.github.bitbox.bitbox.dto.OrderCancelDto;
 import io.github.bitbox.bitbox.dto.OrderInfoDto;
 import io.github.bitbox.bitbox.dto.PaymentInfoDto;
 import io.github.bitbox.bitbox.dto.ProductUpdateDto;
+import io.github.bitbox.bitbox.dto.SubscriptionDto;
 import io.github.bitbox.bitbox.enums.PaymentMethodEnum;
 import io.github.bitbox.bitbox.enums.PaymentTypeEnum;
+import io.github.bitbox.bitbox.enums.SubscriptionTypeEnum;
 import io.github.bitbox.bitbox.util.KafkaTopicNameInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -40,26 +47,64 @@ import java.util.List;
 public class PaymentService {
     private final KakaoPayUtil kakaoPayUtil;
     private final KafkaTemplate<String, CreditUpdateDto> creditUpdateDtoKafkaTemplate;
+    private final KafkaTemplate<String, SubscriptionDto> subscriptionDtoKafkaTemplate;
     private final KafkaTemplate<String, List<ProductUpdateDto>> productUpdateDtoKafkaTemplate;
     private final PaymentRepository paymentRepository;
     private final KakaoPaymentRepository kakaoPaymentRepository;
     private final PaymentOrderRepository paymentOrderRepository;
+    @Value("${subscriptionCid}")
+    private String subscriptionCid;
 
     @Transactional
-    public void createPayment(String partnerOrderId, String pgToken, PaymentDto paymentDto) {
-        Payment payment = paymentRepository.save(PaymentDto.convertPaymentDtoToPayment(paymentDto));
-        kakaoPaymentRepository.save(KakaoPayment.builder().payment(payment).tid(paymentDto.getTid()).build());
-        if (kakaoPayUtil.callKakaoApproveApi(KakaoPayApproveDto.builder().partnerOrderId(partnerOrderId).tid(paymentDto.getTid())
-                        .partnerUserId(String.valueOf(paymentDto.getConsumerId())).pgToken(pgToken).build()) != HttpStatus.SC_OK) {
+    public void createSubscription(String partnerOrderId, String pgToken, SubscriptionPaymentDto subscriptionPaymentDto) {
+        Payment payment = paymentRepository.save(subscriptionPaymentDto.convertSubscriptionPaymentDtoToPayment());
+
+        kakaoPaymentRepository.save(KakaoPayment.builder().payment(payment).tid(subscriptionPaymentDto.getTid()).build());
+        ResponseEntity<String> response = kakaoPayUtil.callKakaoSubscriptionApproveApi(KakaoPayApproveDto.builder().partnerOrderId(partnerOrderId).tid(subscriptionPaymentDto.getTid())
+                .partnerUserId(String.valueOf(subscriptionPaymentDto.getConsumerId())).pgToken(pgToken).build());
+        if(response.getStatusCode().value()!=HttpStatus.SC_OK){
+            throw new KakaoPayApproveException("카카오 페이 승인 실패");
+        }
+
+        LocalDateTime startDate = LocalDateTime.now();
+        try {
+            subscriptionDtoKafkaTemplate.send(KafkaTopicNameInfo.CREATE_SUBSCRIPTION, SubscriptionDto.builder()
+                    .consumerId(subscriptionPaymentDto.getConsumerId())
+                    .subscriptionType(SubscriptionTypeEnum.YANGBAN)
+                    .paymentAmount(subscriptionPaymentDto.getPaymentAmount())
+                    .taxFreeAmount(subscriptionPaymentDto.getPaymentTaxFreeAmount())
+                    .startDate(startDate)
+                    .endDate(startDate.plusDays(30))
+                    .paymentMethod(PaymentMethodEnum.KAKAO)
+                    .subscripton(KakaoSubscription.builder()
+                            .sid(kakaoPayUtil.getTargetToken(response, "sid"))
+                            .cid(subscriptionCid)
+                            .tid(subscriptionPaymentDto.getTid())
+                            .orderId(partnerOrderId)
+                            .build())
+            .build());
+        }catch(Exception e){
+            kakaoPayUtil.callKakaoCancelApi(KakaoPayCancelDto.builder().tid(subscriptionPaymentDto.getTid()).cancelAmount(subscriptionPaymentDto.getPaymentAmount())
+                    .cancelTaxFreeAmount(0L).build());
+            throw new KafkaException("카프카 예외 발생");
+        }
+    }
+
+    @Transactional
+    public void createPayment(String partnerOrderId, String pgToken, CreditPaymentDto creditPaymentDto) {
+        Payment payment = paymentRepository.save(creditPaymentDto.convertPaymentDtoToPayment());
+        kakaoPaymentRepository.save(KakaoPayment.builder().payment(payment).tid(creditPaymentDto.getTid()).build());
+        if (kakaoPayUtil.callKakaoApproveApi(KakaoPayApproveDto.builder().partnerOrderId(partnerOrderId).tid(creditPaymentDto.getTid())
+                        .partnerUserId(String.valueOf(creditPaymentDto.getConsumerId())).pgToken(pgToken).build()) != HttpStatus.SC_OK) {
             throw new KakaoPayApproveException("카카오 페이 승인 실패");
         }
 
         try {
             creditUpdateDtoKafkaTemplate.send(KafkaTopicNameInfo.UPDATE_CREDIT, CreditUpdateDto.builder()
-                    .consumerId(paymentDto.getConsumerId()).credit(paymentDto.getChargeCredit()).tid(paymentDto.getTid())
-                    .cancelAmount(paymentDto.getPaymentAmount()).cancelTaxFreeAmount(0L).build());
+                    .consumerId(creditPaymentDto.getConsumerId()).credit(creditPaymentDto.getChargeCredit()).tid(creditPaymentDto.getTid())
+                    .cancelAmount(creditPaymentDto.getPaymentAmount()).cancelTaxFreeAmount(0L).build());
         }catch(Exception e){
-            kakaoPayUtil.callKakaoCancelApi(KakaoPayCancelDto.builder().tid(paymentDto.getTid()).cancelAmount(paymentDto.getPaymentAmount())
+            kakaoPayUtil.callKakaoCancelApi(KakaoPayCancelDto.builder().tid(creditPaymentDto.getTid()).cancelAmount(creditPaymentDto.getPaymentAmount())
                     .cancelTaxFreeAmount(0L).build());
             throw new KafkaException("카프카 예외 발생");
         }

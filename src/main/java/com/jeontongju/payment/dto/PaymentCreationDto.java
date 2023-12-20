@@ -21,8 +21,8 @@ import java.util.List;
  comment : 주문정보에서 해당 결제정보를 가지고 있어야 하기 때문에 해당 DTO가 존재함
  */
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class PaymentCreationDto {
     @NotNull(message = "결제종류는 필수 입니다.")
