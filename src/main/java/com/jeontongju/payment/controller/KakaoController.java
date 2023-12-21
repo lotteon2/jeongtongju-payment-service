@@ -50,6 +50,10 @@ public class KakaoController {
     private final PointFeignServiceClient pointFeignServiceClient;
     @Value("${subscriptionFee}")
     private Long subscriptionFee;
+    @Value("${frontSuccessUrl}")
+    private String frontSuccessUrl;
+    @Value("${frontFailUrl}")
+    private String frontFailUrl;
 
     @GetMapping("consumers/{consumerId}/credit-charge-history")
     public ResponseEntity<ResponseFormat<Page<CreditChargeHistoryDto>>> getConsumerCreditHistory(@PathVariable Long consumerId, Pageable pageable) {
@@ -78,7 +82,7 @@ public class KakaoController {
                                               @RequestBody @Valid PaymentCreationDto paymentCreationDto) {
         checkConsumerRole(memberRole, "주문은 소비자만 할 수 있습니다.");
         if(paymentCreationDto.getCouponCode()!=null && paymentCreationDto.getCouponAmount()==null
-        || paymentCreationDto.getCouponCode()==null && paymentCreationDto.getCouponAmount()!=null){
+                || paymentCreationDto.getCouponCode()==null && paymentCreationDto.getCouponAmount()!=null){
             throw new CouponAmountEmptyException("쿠폰 관련 정보가 이상합니다.");
         }
 
@@ -98,16 +102,16 @@ public class KakaoController {
 
     @RequestMapping("/subscription-approve")
     public String kakaoSubscriptionApprove(@RequestParam("partnerOrderId") String partnerOrderId,
-                                     @RequestParam("pg_token") String pgToken){
+                                           @RequestParam("pg_token") String pgToken){
         paymentService.createSubscription(partnerOrderId, pgToken, redisUtil.commonApproveLogin(partnerOrderId, SubscriptionPaymentDto.class));
-        return kakaoPayUtil.generatePageCloseCodeWithAlert("subscribe");
+        return kakaoPayUtil.redirectPage(frontSuccessUrl, null);
     }
 
     @RequestMapping("/credit-approve")
     public String kakaoCreditApprove(@RequestParam("partnerOrderId") String partnerOrderId,
-                               @RequestParam("pg_token") String pgToken){
+                                     @RequestParam("pg_token") String pgToken){
         paymentService.createPayment(partnerOrderId, pgToken, redisUtil.commonApproveLogin(partnerOrderId, CreditPaymentDto.class));
-        return kakaoPayUtil.generatePageCloseCodeWithAlert("credit");
+        return kakaoPayUtil.redirectPage(frontSuccessUrl, null);
     }
 
     @RequestMapping("/order-approve")
@@ -118,12 +122,12 @@ public class KakaoController {
         kakaoPayMethod.setPgToken(pgToken);
 
         orderInfoDtoKafkaRouteUtil.send(orderInfoDto);
-        return kakaoPayUtil.generatePageCloseCodeWithAlert("pay");
+        return kakaoPayUtil.redirectPage(frontSuccessUrl, null);
     }
 
     @RequestMapping({"/fail", "/cancel"})
-    public String kakaoFail(){
-        return kakaoPayUtil.generateFailPage();
+    public String kakaoFail(@RequestParam String type){
+        return kakaoPayUtil.redirectPage(frontFailUrl, type);
     }
 
     private void checkConsumerRole(MemberRoleEnum memberRole, String message) {

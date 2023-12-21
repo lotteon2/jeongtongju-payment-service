@@ -79,9 +79,6 @@ public class KakaoPayUtil {
     @Value("${kakaoPayKey}")
     private String kakaoPayKey;
 
-    @Value("${frontSuccessUrl}")
-    private String frontSuccessUrl;
-
     private final String KAKAO_READY_URL = "https://kapi.kakao.com/v1/payment/ready";
 
     private final String KAKAO_APPROVE_URL = "https://kapi.kakao.com/v1/payment/approve";
@@ -103,7 +100,7 @@ public class KakaoPayUtil {
                 .paymentMethod(PaymentMethodEnum.KAKAO)
                 .paymentTaxFreeAmount(0L)
                 .tid(getTargetToken(exchange,"tid"))
-        .build());
+                .build());
         return exchange;
     }
 
@@ -139,7 +136,7 @@ public class KakaoPayUtil {
                     .couponCode(paymentCreationDto.getCouponCode())
                     .couponAmount(paymentCreationDto.getCouponAmount())
                     .totalAmount(paymentCreationDto.getTotalAmount())
-            .build()));
+                    .build()));
         }
 
         Long consumerId = Long.valueOf(kakaoPaymentDto.getPartnerUserId());
@@ -193,16 +190,11 @@ public class KakaoPayUtil {
         return callKakaoApi(KAKAO_CANCEL_URL, kakaoPayCancelDto.generateKakaoPayCancelData(cid)).getStatusCode().value();
     }
 
-    public String generateFailPage() {
-        String htmlCode = "<!DOCTYPE html><html><head></head><body>";
-        htmlCode += "<h1>문제가 발생했습니다. 해당 창을 끄고 다시 시도해주세요 </h1>";
-        htmlCode += "</body></html>";
-
-        return htmlCode;
-    }
-
-    public String generatePageCloseCodeWithAlert(String queryParam) {
-        String path = frontSuccessUrl + "?type=" + queryParam;
+    public String redirectPage(String url, String queryParam) {
+        String path = url;
+        if(queryParam != null){
+            path+="?type=" + queryParam;
+        }
 
         String htmlCode = "<!DOCTYPE html><html><head></head><body>";
         htmlCode += "<script>";
