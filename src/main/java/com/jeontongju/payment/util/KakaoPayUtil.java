@@ -11,7 +11,9 @@ import com.jeontongju.payment.exception.FeignClientResponseException;
 import com.jeontongju.payment.feign.CouponFeignServiceClient;
 import com.jeontongju.payment.feign.PointFeignServiceClient;
 import com.jeontongju.payment.feign.ProductFeignServiceClient;
+import io.github.bitbox.bitbox.dto.ConsumerRegularPaymentsCouponDto;
 import io.github.bitbox.bitbox.dto.FeignFormat;
+import io.github.bitbox.bitbox.dto.KakaoBatchDto;
 import io.github.bitbox.bitbox.dto.KakaoPayApproveDto;
 import io.github.bitbox.bitbox.dto.KakaoPayCancelDto;
 import io.github.bitbox.bitbox.dto.KakaoPayMethod;
@@ -20,10 +22,12 @@ import io.github.bitbox.bitbox.dto.OrderInfoDto;
 import io.github.bitbox.bitbox.dto.ProductInfoDto;
 import io.github.bitbox.bitbox.dto.ProductSearchDto;
 import io.github.bitbox.bitbox.dto.ProductUpdateDto;
+import io.github.bitbox.bitbox.dto.SubscriptionBatchInterface;
 import io.github.bitbox.bitbox.dto.UserCouponUpdateDto;
 import io.github.bitbox.bitbox.dto.UserPointUpdateDto;
 import io.github.bitbox.bitbox.enums.PaymentMethodEnum;
 import io.github.bitbox.bitbox.enums.PaymentTypeEnum;
+import io.github.bitbox.bitbox.util.KafkaTopicNameInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +36,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -85,11 +90,14 @@ public class KakaoPayUtil {
 
     private final String KAKAO_CANCEL_URL = "https://kapi.kakao.com/v1/payment/cancel";
 
+    private final String KAKAO_SUBSCRIPTION_URL = "https://kapi.kakao.com/v1/payment/subscription";
+
     private final ProductFeignServiceClient productFeignServiceClient;
     private final PointFeignServiceClient pointFeignServiceClient;
     private final CouponFeignServiceClient couponFeignServiceClient;
     private final RedisUtil redisUtil;
     private final ObjectMapper objectMapper;
+    private final KafkaTemplate<String, ConsumerRegularPaymentsCouponDto> kafkaTemplate;
 
     public ResponseEntity<String> createSubscription(KakaoPaymentDto kakaoPaymentDto){
         ResponseEntity<String> exchange = callKakaoApi( KAKAO_READY_URL, kakaoPaymentDto.generateKakaoPayApprovePayReady(subscriptionCid,kakaoPaymentDto.getTotalAmount(),subscriptionApprovalUrl, subscriptionCancelUrl, subscriptionFailUrl ));
@@ -188,6 +196,24 @@ public class KakaoPayUtil {
 
     public int callKakaoCancelApi(KakaoPayCancelDto kakaoPayCancelDto) {
         return callKakaoApi(KAKAO_CANCEL_URL, kakaoPayCancelDto.generateKakaoPayCancelData(cid)).getStatusCode().value();
+    }
+
+    public void renewSubscription(List<SubscriptionBatchInterface> subscriptionBatchDtoList) {
+        for(SubscriptionBatchInterface subscriptionBatchInterface : subscriptionBatchDtoList){
+            long consumerId = 0L;
+            if(subscriptionBatchInterface instanceof KakaoBatchDto){
+                KakaoBatchDto kakaoBatchDto = (KakaoBatchDto) subscriptionBatchInterface;
+                consumerId = Long.parseLong(kakaoBatchDto.getPartnerUserId());
+                callKakaoApi(KAKAO_SUBSCRIPTION_URL, subscriptionBatchInterface.settingSubscriptionDto());
+            }
+
+            kafkaTemplate.send(
+                    KafkaTopicNameInfo.ISSUE_REGULAR_PAYMENTS_COUPON,
+                    ConsumerRegularPaymentsCouponDto.builder()
+                            .consumerId(consumerId)
+                            .successedAt(LocalDateTime.now())
+            .build());
+        }
     }
 
     public String redirectPage(String url, String queryParam) {

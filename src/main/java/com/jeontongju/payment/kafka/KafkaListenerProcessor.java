@@ -4,6 +4,7 @@ import com.jeontongju.payment.service.PaymentService;
 import com.jeontongju.payment.util.KakaoPayUtil;
 import io.github.bitbox.bitbox.dto.KakaoPayCancelDto;
 import io.github.bitbox.bitbox.dto.OrderCancelDto;
+import io.github.bitbox.bitbox.dto.SubscriptionBatchDto;
 import io.github.bitbox.bitbox.util.KafkaTopicNameInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -23,5 +24,10 @@ public class KafkaListenerProcessor {
     @KafkaListener(topics = KafkaTopicNameInfo.CANCEL_ORDER_PAYMENT)
     public void cancelPayment(OrderCancelDto orderCancelDto){
         paymentService.cancelPayment(orderCancelDto);
+    }
+
+    @KafkaListener(topics = KafkaTopicNameInfo.PAYMENT_SUBSCRIPTION)
+    public void renewSubscription(SubscriptionBatchDto subscriptionBatchDto){
+        kakaoPayUtil.renewSubscription(subscriptionBatchDto.getSubscriptionBatchInterface());
     }
 }

@@ -19,7 +19,7 @@ import io.github.bitbox.bitbox.dto.KakaoSubscription;
 import io.github.bitbox.bitbox.dto.OrderCancelDto;
 import io.github.bitbox.bitbox.dto.OrderInfoDto;
 import io.github.bitbox.bitbox.dto.PaymentInfoDto;
-import io.github.bitbox.bitbox.dto.ProductUpdateDto;
+import io.github.bitbox.bitbox.dto.ProductUpdateListDto;
 import io.github.bitbox.bitbox.dto.SubscriptionDto;
 import io.github.bitbox.bitbox.enums.PaymentMethodEnum;
 import io.github.bitbox.bitbox.enums.PaymentTypeEnum;
@@ -38,7 +38,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Service
 @Slf4j
@@ -48,7 +47,7 @@ public class PaymentService {
     private final KakaoPayUtil kakaoPayUtil;
     private final KafkaTemplate<String, CreditUpdateDto> creditUpdateDtoKafkaTemplate;
     private final KafkaTemplate<String, SubscriptionDto> subscriptionDtoKafkaTemplate;
-    private final KafkaTemplate<String, List<ProductUpdateDto>> productUpdateDtoKafkaTemplate;
+    private final KafkaTemplate<String, ProductUpdateListDto> productUpdateDtoKafkaTemplate;
     private final PaymentRepository paymentRepository;
     private final KakaoPaymentRepository kakaoPaymentRepository;
     private final PaymentOrderRepository paymentOrderRepository;
@@ -147,7 +146,9 @@ public class PaymentService {
         }
 
         cancelPayment(payment,returnValue);
-        productUpdateDtoKafkaTemplate.send(KafkaTopicNameInfo.CANCEL_ORDER_STOCK, orderCancelDto.getProductUpdateDtoList());
+        productUpdateDtoKafkaTemplate.send(KafkaTopicNameInfo.CANCEL_ORDER_STOCK, ProductUpdateListDto.builder()
+                .productUpdateDtoList(orderCancelDto.getProductUpdateDtoList())
+        .build());
     }
 
     public Page<CreditChargeHistoryDto> getConsumerCreditHistory(Long consumerId, Pageable pageable){
