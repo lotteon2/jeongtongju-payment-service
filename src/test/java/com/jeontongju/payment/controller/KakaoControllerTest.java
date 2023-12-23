@@ -4,6 +4,7 @@ import com.jeontongju.payment.ControllerTestUtil;
 import com.jeontongju.payment.dto.MemberCreditChargeDto;
 import com.jeontongju.payment.dto.PaymentCreationDto;
 import com.jeontongju.payment.dto.ProductDto;
+import com.jeontongju.payment.feign.PointFeignServiceClient;
 import com.jeontongju.payment.service.PaymentService;
 import com.jeontongju.payment.util.KakaoPayUtil;
 import com.jeontongju.payment.util.OrderKafkaRouteUtil;
@@ -30,7 +31,8 @@ public class KakaoControllerTest extends ControllerTestUtil {
     private OrderKafkaRouteUtil<OrderInfoDto> orderInfoDtoKafkaRouteUtil;
     @MockBean
     private PaymentService paymentService;
-
+    @MockBean
+    private PointFeignServiceClient pointFeignServiceClient;
 
     @Test
     void ROLE_MANAGER는_주문이_불가능하다() throws Exception{

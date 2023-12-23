@@ -37,3 +37,7 @@ creditApprovalUrl: test
 creditCancelUrl: test
 creditFailUrl: test
 kakaoPayKey: test
+subscriptionFee: 1
+frontSuccessUrl: test
+frontFailUrl: test
+subscriptionCid: test

@@ -1,5 +1,6 @@
 package com.jeontongju.payment.service;
 
+import com.jeontongju.payment.feign.PointFeignServiceClient;
 import com.jeontongju.payment.kafka.KafkaListenerProcessor;
 import com.jeontongju.payment.util.KakaoPayUtil;
 import com.jeontongju.payment.util.RedisUtil;
@@ -25,6 +26,8 @@ public class PaymentServiceTest {
     private KafkaListenerProcessor kafkaListenerProcessor;
     @Autowired
     private PaymentService paymentService;
+    @MockBean
+    private PointFeignServiceClient pointFeignServiceClient;
 
     @Test
     public void payment테이블이_정상적으로_생성된다(){
