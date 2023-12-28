@@ -58,7 +58,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final KakaoPaymentRepository kakaoPaymentRepository;
     private final PaymentOrderRepository paymentOrderRepository;
-    private final KafkaProcessor<MemberInfoForNotificationDto> memberInfoForNotificationDtoKafkaProcessor;
+    private final KafkaTemplate<String, MemberInfoForNotificationDto> memberInfoForNotificationDtoKafkaProcessor;
     @Value("${subscriptionCid}")
     private String subscriptionCid;
 
