@@ -7,6 +7,7 @@ import com.jeontongju.payment.dto.CreditPaymentDto;
 import com.jeontongju.payment.dto.SubscriptionPaymentDto;
 import com.jeontongju.payment.dto.response.CreditChargeHistoryDto;
 import com.jeontongju.payment.exception.KakaoPayApproveException;
+import com.jeontongju.payment.kafka.KafkaProcessor;
 import com.jeontongju.payment.repository.KakaoPaymentRepository;
 import com.jeontongju.payment.repository.PaymentOrderRepository;
 import com.jeontongju.payment.repository.PaymentRepository;
@@ -16,13 +17,17 @@ import io.github.bitbox.bitbox.dto.KakaoPayApproveDto;
 import io.github.bitbox.bitbox.dto.KakaoPayCancelDto;
 import io.github.bitbox.bitbox.dto.KakaoPayMethod;
 import io.github.bitbox.bitbox.dto.KakaoSubscription;
+import io.github.bitbox.bitbox.dto.MemberInfoForNotificationDto;
 import io.github.bitbox.bitbox.dto.OrderCancelDto;
 import io.github.bitbox.bitbox.dto.OrderInfoDto;
 import io.github.bitbox.bitbox.dto.PaymentInfoDto;
 import io.github.bitbox.bitbox.dto.ProductUpdateListDto;
+import io.github.bitbox.bitbox.dto.ServerErrorForNotificationDto;
 import io.github.bitbox.bitbox.dto.SubscriptionDto;
+import io.github.bitbox.bitbox.enums.NotificationTypeEnum;
 import io.github.bitbox.bitbox.enums.PaymentMethodEnum;
 import io.github.bitbox.bitbox.enums.PaymentTypeEnum;
+import io.github.bitbox.bitbox.enums.RecipientTypeEnum;
 import io.github.bitbox.bitbox.enums.SubscriptionTypeEnum;
 import io.github.bitbox.bitbox.util.KafkaTopicNameInfo;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +44,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+import static java.time.LocalDateTime.now;
+
 @Service
 @Slf4j
 @Transactional(readOnly = true)
@@ -51,6 +58,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final KakaoPaymentRepository kakaoPaymentRepository;
     private final PaymentOrderRepository paymentOrderRepository;
+    private final KafkaProcessor<MemberInfoForNotificationDto> memberInfoForNotificationDtoKafkaProcessor;
     @Value("${subscriptionCid}")
     private String subscriptionCid;
 
@@ -82,6 +90,14 @@ public class PaymentService {
                             .orderId(partnerOrderId)
                             .build())
             .build());
+
+            memberInfoForNotificationDtoKafkaProcessor.send(KafkaTopicNameInfo.SEND_NOTIFICATION,
+                    ServerErrorForNotificationDto.builder()
+                            .recipientId(subscriptionPaymentDto.getConsumerId())
+                            .recipientType(RecipientTypeEnum.ROLE_CONSUMER)
+                            .notificationType(NotificationTypeEnum.SUCCESS_SUBSCRIPTION_PAYMENTS)
+                            .createdAt(now())
+                    .build());
         }catch(Exception e){
             kakaoPayUtil.callKakaoCancelApi(KakaoPayCancelDto.builder().tid(subscriptionPaymentDto.getTid()).cancelAmount(subscriptionPaymentDto.getPaymentAmount())
                     .cancelTaxFreeAmount(0L).build());
