@@ -8,6 +8,7 @@ import io.github.bitbox.bitbox.dto.SubscriptionBatchDto;
 import io.github.bitbox.bitbox.util.KafkaTopicNameInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
 public class KafkaListenerProcessor {
     private final KakaoPayUtil kakaoPayUtil;
     private final PaymentService paymentService;
+    private final KafkaTemplate<String, OrderCancelDto> orderCancelDtoKafkaTemplate;
 
     @KafkaListener(topics = KafkaTopicNameInfo.CANCEL_KAKAOPAY)
     public void cancelKakaoPay(KakaoPayCancelDto kakaoPayCancelDto) {
@@ -23,7 +25,11 @@ public class KafkaListenerProcessor {
 
     @KafkaListener(topics = KafkaTopicNameInfo.CANCEL_ORDER_PAYMENT)
     public void cancelPayment(OrderCancelDto orderCancelDto){
-        paymentService.cancelPayment(orderCancelDto);
+        try {
+            paymentService.cancelPayment(orderCancelDto);
+        }catch(Exception e){
+            orderCancelDtoKafkaTemplate.send(KafkaTopicNameInfo.RECOVER_CANCEL_ORDER_STOCK, orderCancelDto);
+        }
     }
 
     @KafkaListener(topics = KafkaTopicNameInfo.PAYMENT_SUBSCRIPTION)

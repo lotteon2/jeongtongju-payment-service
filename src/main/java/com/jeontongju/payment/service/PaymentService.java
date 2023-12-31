@@ -162,9 +162,6 @@ public class PaymentService {
         }
 
         cancelPayment(payment,returnValue);
-        productUpdateDtoKafkaTemplate.send(KafkaTopicNameInfo.CANCEL_ORDER_STOCK, ProductUpdateListDto.builder()
-                .productUpdateDtoList(orderCancelDto.getProductUpdateDtoList())
-        .build());
     }
 
     public Page<CreditChargeHistoryDto> getConsumerCreditHistory(Long consumerId, Pageable pageable){
