@@ -3,19 +3,27 @@ package com.jeontongju.payment.controller;
 import com.jeontongju.payment.dto.KakaoPaymentDto;
 import com.jeontongju.payment.dto.MemberCreditChargeDto;
 import com.jeontongju.payment.dto.PaymentCreationDto;
-import com.jeontongju.payment.dto.PaymentDto;
+import com.jeontongju.payment.dto.CreditPaymentDto;
+import com.jeontongju.payment.dto.SubscriptionPaymentDto;
 import com.jeontongju.payment.dto.response.CreditChargeHistoryDto;
-import com.jeontongju.payment.dto.temp.KakaoPayMethod;
-import com.jeontongju.payment.dto.temp.OrderInfoDto;
-import com.jeontongju.payment.dto.temp.ResponseFormat;
-import com.jeontongju.payment.enums.temp.MemberRoleEnum;
+import com.jeontongju.payment.dto.SubscriptionRequestDto;
 import com.jeontongju.payment.exception.CouponAmountEmptyException;
+import com.jeontongju.payment.exception.FeignClientResponseException;
 import com.jeontongju.payment.exception.InvalidPermissionException;
+import com.jeontongju.payment.feign.PointFeignServiceClient;
 import com.jeontongju.payment.service.PaymentService;
 import com.jeontongju.payment.util.KakaoPayUtil;
 import com.jeontongju.payment.util.OrderKafkaRouteUtil;
 import com.jeontongju.payment.util.RedisUtil;
+import io.github.bitbox.bitbox.dto.FeignFormat;
+import io.github.bitbox.bitbox.dto.KakaoPayMethod;
+import io.github.bitbox.bitbox.dto.OrderInfoDto;
+import io.github.bitbox.bitbox.dto.ResponseFormat;
+import io.github.bitbox.bitbox.enums.FailureTypeEnum;
+import io.github.bitbox.bitbox.enums.MemberRoleEnum;
+import io.github.bitbox.bitbox.enums.PaymentMethodEnum;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -39,15 +47,33 @@ public class KakaoController {
     private final RedisUtil redisUtil;
     private final OrderKafkaRouteUtil<OrderInfoDto> orderInfoDtoKafkaRouteUtil;
     private final PaymentService paymentService;
+    private final PointFeignServiceClient pointFeignServiceClient;
+    @Value("${subscriptionFee}")
+    private Long subscriptionFee;
+    @Value("${frontSuccessUrl}")
+    private String frontSuccessUrl;
+    @Value("${frontFailUrl}")
+    private String frontFailUrl;
 
     @GetMapping("consumers/{consumerId}/credit-charge-history")
     public ResponseEntity<ResponseFormat<Page<CreditChargeHistoryDto>>> getConsumerCreditHistory(@PathVariable Long consumerId, Pageable pageable) {
-        return ResponseEntity.ok().body(ResponseFormat.<Page<CreditChargeHistoryDto>>builder()
-                .code(HttpStatus.OK.value())
-                .message(HttpStatus.OK.getReasonPhrase())
-                .detail("크레딧 충전 내역 조회 성공")
-                .data(paymentService.getConsumerCreditHistory(consumerId, pageable))
-                .build());
+        return ResponseEntity.ok().body(ResponseFormat.<Page<CreditChargeHistoryDto>>builder().code(HttpStatus.OK.value()).message(HttpStatus.OK.getReasonPhrase())
+                .detail("크레딧 충전 내역 조회 성공").data(paymentService.getConsumerCreditHistory(consumerId, pageable)).build());
+    }
+
+    @PostMapping("/subscription")
+    public ResponseEntity<String> createSubscription(@RequestHeader Long memberId, @RequestBody @Valid SubscriptionRequestDto subscriptionRequestDto){
+        // 이미 구독권이 존재하는 경우
+        if(pointFeignServiceClient.getConsumerSubscription(memberId).getData()){
+            throw new FeignClientResponseException(FailureTypeEnum.EXISTING_SUBSCRIPTION_PAYMENT);
+        }
+
+        ResponseEntity<String> result = null;
+        if(subscriptionRequestDto.getPaymentMethod() == PaymentMethodEnum.KAKAO) {
+            result = kakaoPayUtil.createSubscription(KakaoPaymentDto.convertPaymentDto(String.valueOf(memberId), subscriptionRequestDto.getItemName(), subscriptionFee));
+        }
+
+        return result;
     }
 
     @PostMapping("/order")
@@ -56,7 +82,7 @@ public class KakaoController {
                                               @RequestBody @Valid PaymentCreationDto paymentCreationDto) {
         checkConsumerRole(memberRole, "주문은 소비자만 할 수 있습니다.");
         if(paymentCreationDto.getCouponCode()!=null && paymentCreationDto.getCouponAmount()==null
-        || paymentCreationDto.getCouponCode()==null && paymentCreationDto.getCouponAmount()!=null){
+                || paymentCreationDto.getCouponCode()==null && paymentCreationDto.getCouponAmount()!=null){
             throw new CouponAmountEmptyException("쿠폰 관련 정보가 이상합니다.");
         }
 
@@ -74,11 +100,18 @@ public class KakaoController {
                 memberCreditChargeDto.getItemName(), memberCreditChargeDto.getChargeCredit()));
     }
 
+    @RequestMapping("/subscription-approve")
+    public String kakaoSubscriptionApprove(@RequestParam("partnerOrderId") String partnerOrderId,
+                                           @RequestParam("pg_token") String pgToken){
+        paymentService.createSubscription(partnerOrderId, pgToken, redisUtil.commonApproveLogin(partnerOrderId, SubscriptionPaymentDto.class));
+        return kakaoPayUtil.redirectPage(frontSuccessUrl, null);
+    }
+
     @RequestMapping("/credit-approve")
     public String kakaoCreditApprove(@RequestParam("partnerOrderId") String partnerOrderId,
-                               @RequestParam("pg_token") String pgToken){
-        paymentService.createPayment(partnerOrderId, pgToken, redisUtil.commonApproveLogin(partnerOrderId, PaymentDto.class));
-        return kakaoPayUtil.generatePageCloseCodeWithAlert(null);
+                                     @RequestParam("pg_token") String pgToken){
+        paymentService.createPayment(partnerOrderId, pgToken, redisUtil.commonApproveLogin(partnerOrderId, CreditPaymentDto.class));
+        return kakaoPayUtil.redirectPage(frontSuccessUrl, null);
     }
 
     @RequestMapping("/order-approve")
@@ -89,16 +122,16 @@ public class KakaoController {
         kakaoPayMethod.setPgToken(pgToken);
 
         orderInfoDtoKafkaRouteUtil.send(orderInfoDto);
-        return kakaoPayUtil.generatePageCloseCodeWithAlert(null);
+        return kakaoPayUtil.redirectPage(frontSuccessUrl, null);
     }
 
     @RequestMapping({"/fail", "/cancel"})
-    public String kakaoFail(){
-        return kakaoPayUtil.generateFailPage();
+    public String kakaoFail(@RequestParam String type){
+        return kakaoPayUtil.redirectPage(frontFailUrl, type);
     }
 
     private void checkConsumerRole(MemberRoleEnum memberRole, String message) {
-        if(memberRole != MemberRoleEnum.ROLE_USER){
+        if(memberRole != MemberRoleEnum.ROLE_CONSUMER){
             throw new InvalidPermissionException(message);
         }
     }

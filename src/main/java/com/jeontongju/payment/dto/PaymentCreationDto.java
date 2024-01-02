@@ -1,7 +1,7 @@
 package com.jeontongju.payment.dto;
 
-import com.jeontongju.payment.enums.temp.PaymentMethodEnum;
-import com.jeontongju.payment.enums.temp.PaymentTypeEnum;
+import io.github.bitbox.bitbox.enums.PaymentMethodEnum;
+import io.github.bitbox.bitbox.enums.PaymentTypeEnum;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,8 +21,8 @@ import java.util.List;
  comment : 주문정보에서 해당 결제정보를 가지고 있어야 하기 때문에 해당 DTO가 존재함
  */
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class PaymentCreationDto {
     @NotNull(message = "결제종류는 필수 입니다.")
@@ -37,9 +37,6 @@ public class PaymentCreationDto {
     private String couponCode;
 
     private Long couponAmount;
-
-    @NotEmpty(message = "상품 이미지는 필수 입니다.")
-    private String productImg;
 
     @NotEmpty(message = "받는 사람 이름은 필수 입니다.")
     private String recipientName;

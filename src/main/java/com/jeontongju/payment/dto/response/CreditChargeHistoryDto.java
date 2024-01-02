@@ -1,6 +1,6 @@
 package com.jeontongju.payment.dto.response;
 
-import com.jeontongju.payment.enums.temp.PaymentMethodEnum;
+import io.github.bitbox.bitbox.enums.PaymentMethodEnum;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

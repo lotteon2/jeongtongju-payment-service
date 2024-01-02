@@ -2,7 +2,7 @@ package com.jeontongju.payment.repository;
 
 import com.jeontongju.payment.domain.Payment;
 import com.jeontongju.payment.dto.response.CreditChargeHistoryDto;
-import com.jeontongju.payment.enums.temp.PaymentTypeEnum;
+import io.github.bitbox.bitbox.enums.PaymentTypeEnum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -1,8 +1,8 @@
 package com.jeontongju.payment.domain;
 
 import com.jeontongju.payment.domain.common.BaseEntity;
-import com.jeontongju.payment.enums.temp.PaymentMethodEnum;
-import com.jeontongju.payment.enums.temp.PaymentTypeEnum;
+import io.github.bitbox.bitbox.enums.PaymentMethodEnum;
+import io.github.bitbox.bitbox.enums.PaymentTypeEnum;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

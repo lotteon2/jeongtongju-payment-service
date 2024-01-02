@@ -2,7 +2,7 @@ package com.jeontongju.payment;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jeontongju.payment.controller.KakaoController;
-import com.jeontongju.payment.enums.temp.MemberRoleEnum;
+import io.github.bitbox.bitbox.enums.MemberRoleEnum;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;

@@ -27,7 +27,7 @@ public class KakaoPaymentDto {
                 .quantity(1L)
                 .totalAmount(totalAmount)
                 .taxFreeAmount(0L)
-                .build();
+        .build();
     }
 
     public String generateKakaoPayApprovePayReady(String cid, long realPrice, String approvalUrl, String cancelUrl, String failUrl){
