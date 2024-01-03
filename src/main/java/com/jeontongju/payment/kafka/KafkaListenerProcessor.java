@@ -33,8 +33,9 @@ public class KafkaListenerProcessor {
     public void cancelPayment(OrderCancelDto orderCancelDto){
         try {
             paymentService.cancelPayment(orderCancelDto);
+            orderCancelDtoKafkaTemplate.send(KafkaTopicNameInfo.CANCEL_ORDER_STOCK, orderCancelDto);
         }catch(Exception e){
-            orderCancelDtoKafkaTemplate.send(KafkaTopicNameInfo.RECOVER_CANCEL_ORDER_STOCK, orderCancelDto);
+            orderCancelDtoKafkaTemplate.send(sendOrderCancel(orderCancelDto), orderCancelDto);
             memberInfoForNotificationDtoKafkaTemplate.send(KafkaTopicNameInfo.SEND_ERROR_CANCELING_ORDER_NOTIFICATION,
                     MemberInfoForNotificationDto.builder()
                             .recipientId(orderCancelDto.getConsumerId())
@@ -49,5 +50,17 @@ public class KafkaListenerProcessor {
     @KafkaListener(topics = KafkaTopicNameInfo.PAYMENT_SUBSCRIPTION)
     public void renewSubscription(SubscriptionBatchDto subscriptionBatchDto){
         kakaoPayUtil.renewSubscription(subscriptionBatchDto.getSubscriptionBatchInterface());
+    }
+
+    private String sendOrderCancel(OrderCancelDto orderCancelDto) {
+        String name;
+        if (orderCancelDto.getCouponCode() != null) {
+            name = KafkaTopicNameInfo.RECOVER_CANCEL_ORDER_COUPON;
+        } else if (orderCancelDto.getPoint() != null) {
+            name = KafkaTopicNameInfo.RECOVER_CANCEL_ORDER_POINT;
+        } else {
+            name = KafkaTopicNameInfo.RECOVER_CANCEL_ORDER;
+        }
+        return name;
     }
 }
