@@ -149,7 +149,6 @@ public class PaymentService {
     }
 
     public void cancelPayment(OrderCancelDto orderCancelDto){
-        if(1==1) throw new RuntimeException();
         PaymentOrder paymentOrder = paymentOrderRepository.findByOrdersId(orderCancelDto.getOrdersId());
         Payment payment = paymentOrder.getPayment();
         long returnValue = paymentOrder.getTotalPrice() - paymentOrder.getMinusPointAmount() - paymentOrder.getMinusCouponAmount();
