@@ -3,13 +3,18 @@ package com.jeontongju.payment.kafka;
 import com.jeontongju.payment.service.PaymentService;
 import com.jeontongju.payment.util.KakaoPayUtil;
 import io.github.bitbox.bitbox.dto.KakaoPayCancelDto;
+import io.github.bitbox.bitbox.dto.MemberInfoForNotificationDto;
 import io.github.bitbox.bitbox.dto.OrderCancelDto;
 import io.github.bitbox.bitbox.dto.SubscriptionBatchDto;
+import io.github.bitbox.bitbox.enums.NotificationTypeEnum;
+import io.github.bitbox.bitbox.enums.RecipientTypeEnum;
 import io.github.bitbox.bitbox.util.KafkaTopicNameInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
 
 @Component
 @RequiredArgsConstructor
@@ -17,6 +22,7 @@ public class KafkaListenerProcessor {
     private final KakaoPayUtil kakaoPayUtil;
     private final PaymentService paymentService;
     private final KafkaTemplate<String, OrderCancelDto> orderCancelDtoKafkaTemplate;
+    private final KafkaTemplate<String, MemberInfoForNotificationDto> memberInfoForNotificationDtoKafkaTemplate;
 
     @KafkaListener(topics = KafkaTopicNameInfo.CANCEL_KAKAOPAY)
     public void cancelKakaoPay(KakaoPayCancelDto kakaoPayCancelDto) {
@@ -29,6 +35,14 @@ public class KafkaListenerProcessor {
             paymentService.cancelPayment(orderCancelDto);
         }catch(Exception e){
             orderCancelDtoKafkaTemplate.send(KafkaTopicNameInfo.RECOVER_CANCEL_ORDER_STOCK, orderCancelDto);
+            memberInfoForNotificationDtoKafkaTemplate.send(KafkaTopicNameInfo.SEND_ERROR_CANCELING_ORDER_NOTIFICATION,
+                    MemberInfoForNotificationDto.builder()
+                            .recipientId(orderCancelDto.getConsumerId())
+                            .recipientType(RecipientTypeEnum.ROLE_CONSUMER)
+                            .notificationType(NotificationTypeEnum.INTERNAL_PAYMENT_SERVER_ERROR)
+                            .createdAt(LocalDateTime.now())
+                    .build());
+
         }
     }
 
