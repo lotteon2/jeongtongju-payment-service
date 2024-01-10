@@ -16,7 +16,7 @@ public class OrderKafkaRouteUtil<T> extends KafkaProcessor<T> {
         OrderInfoDto orderInfoDto = (OrderInfoDto) data;
         String topicName;
 
-        if(orderInfoDto.getUserPointUpdateDto().getPoint() != null) { // 포인트 사용의 경우 포인트 서버로 보낸다
+        if(orderInfoDto.getUserPointUpdateDto().getPoint() > 0) { // 포인트 사용의 경우 포인트 서버로 보낸다
             topicName = KafkaTopicNameInfo.REDUCE_POINT;
         }else if(orderInfoDto.getUserCouponUpdateDto().getCouponCode() != null){ // 쿠폰 사용의 경우 쿠폰 서버로 보낸다(포인트 사용X)
             topicName = KafkaTopicNameInfo.USE_COUPON;

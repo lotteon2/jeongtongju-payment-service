@@ -31,7 +31,7 @@ public class PaymentCreationDto {
     @NotNull(message = "결제타입은 필수 입니다.")
     private PaymentMethodEnum paymentMethod;
 
-    @Min(value = 1, message = "사용할 포인트는 최소 1 이상 입니다.")
+    @Min(value = 0, message = "사용할 포인트는 최소 0 이상 입니다.")
     private Long pointUsageAmount;
 
     private String couponCode;

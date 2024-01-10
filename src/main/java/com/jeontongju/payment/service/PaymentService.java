@@ -170,7 +170,6 @@ public class PaymentService {
 
     private void cancelPayment(Payment payment, long returnValue){
         if(payment.getPaymentMethod() == PaymentMethodEnum.KAKAO){
-            log.info("returnValue = {}",returnValue);
             KakaoPayment kakaoPayment = kakaoPaymentRepository.findByPaymentPaymentId(payment.getPaymentId());
             kakaoPayUtil.callKakaoCancelApi(KakaoPayCancelDto.builder().tid(kakaoPayment.getTid()).cancelAmount(returnValue).cancelTaxFreeAmount(0L).build());
         }
