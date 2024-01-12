@@ -61,6 +61,9 @@ public class PaymentCreationDto {
     @NotEmpty(message = "결제명은 필수 입니다.")
     private String titleName;
 
+    @NotNull(message = "장바구니 주문여부는 필수 입니다.")
+    private Boolean isCart;
+
     @Valid
     @NotNull(message = "상품목록은 필수 입니다.")
     private List<ProductDto> products;
