@@ -167,7 +167,7 @@ public class KakaoPayUtil {
                         .basicAddress(paymentCreationDto.getBasicAddress())
                         .addressDetail(paymentCreationDto.getAddressDetail())
                         .zoneCode(paymentCreationDto.getZoneCode())
-                        .isCart(paymentCreationDto.getIsCart())
+                        .cart(paymentCreationDto.getIsCart())
                         .build())
                 .build());
         return exchange;
