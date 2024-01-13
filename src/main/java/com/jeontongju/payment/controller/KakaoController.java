@@ -15,7 +15,6 @@ import com.jeontongju.payment.service.PaymentService;
 import com.jeontongju.payment.util.KakaoPayUtil;
 import com.jeontongju.payment.util.OrderKafkaRouteUtil;
 import com.jeontongju.payment.util.RedisUtil;
-import io.github.bitbox.bitbox.dto.FeignFormat;
 import io.github.bitbox.bitbox.dto.KakaoPayMethod;
 import io.github.bitbox.bitbox.dto.OrderInfoDto;
 import io.github.bitbox.bitbox.dto.ResponseFormat;
@@ -23,6 +22,7 @@ import io.github.bitbox.bitbox.enums.FailureTypeEnum;
 import io.github.bitbox.bitbox.enums.MemberRoleEnum;
 import io.github.bitbox.bitbox.enums.PaymentMethodEnum;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -42,6 +42,7 @@ import javax.validation.Valid;
 @RequestMapping("/api")
 @RestController
 @RequiredArgsConstructor
+@Slf4j
 public class KakaoController {
     private final KakaoPayUtil kakaoPayUtil;
     private final RedisUtil redisUtil;
@@ -120,6 +121,7 @@ public class KakaoController {
         OrderInfoDto orderInfoDto = redisUtil.commonApproveLogin(partnerOrderId, OrderInfoDto.class);
         KakaoPayMethod kakaoPayMethod = (KakaoPayMethod) orderInfoDto.getOrderCreationDto().getPaymentInfo();
         kakaoPayMethod.setPgToken(pgToken);
+        log.info("value = {}", orderInfoDto.getOrderCreationDto().getCart());
 
         orderInfoDtoKafkaRouteUtil.send(orderInfoDto);
         return kakaoPayUtil.redirectPage(frontSuccessUrl, null);
