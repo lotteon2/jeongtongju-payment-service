@@ -121,7 +121,6 @@ public class KakaoController {
         OrderInfoDto orderInfoDto = redisUtil.commonApproveLogin(partnerOrderId, OrderInfoDto.class);
         KakaoPayMethod kakaoPayMethod = (KakaoPayMethod) orderInfoDto.getOrderCreationDto().getPaymentInfo();
         kakaoPayMethod.setPgToken(pgToken);
-        log.info("value = {}", orderInfoDto.getOrderCreationDto().getCart());
 
         orderInfoDtoKafkaRouteUtil.send(orderInfoDto);
         return kakaoPayUtil.redirectPage(frontSuccessUrl, null);
